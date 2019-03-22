@@ -23,6 +23,7 @@ Clone the repository
   * git clone https://github.com/Eliovp/amdmemorytweak.git
   
 cd amdmemorytweak
+
 Build
   * g++ amdmemorytweak.cpp -lpci -lresolv
 
