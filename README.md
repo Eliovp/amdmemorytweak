@@ -18,8 +18,10 @@ AMD Memory Tweak lets you read and change memory timings at all times.
 Prerequisites
   * pciutils-dev | libpci-dev
   * build-essential
+  
 Clone the repository
   * git clone https://github.com/Eliovp/amdmemorytweak.git
+  
 cd amdmemorytweak
 Build
   * g++ amdmemorytweak.cpp -lpci -lresolv
