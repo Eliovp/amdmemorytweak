@@ -25,7 +25,7 @@ Clone the repository
 cd amdmemorytweak
 
 Build
-  * g++ amdmemorytweak.cpp -lpci -lresolv
+  * g++ amdmemorytweak.cpp -lpci -lresolv -o amdmemtweak
 
 
 ## Some extra info
