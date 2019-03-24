@@ -1,7 +1,7 @@
-/* 
-	AMD Memory Tweak by 
+/*
+	AMD Memory Tweak by
 	Elio VP			<elio@eliovp.be>
-	A. Solodovnikov		
+	A. Solodovnikov
 	Copyright (c) 2019 Eliovp, BVBA. All rights reserved.
 	Permission is hereby granted, free of charge, to any person obtaining a copy
 	of this software and associated documentation files (the "Software"), to deal
@@ -145,6 +145,14 @@ typedef struct {
 	// TIMING4
 	u32 FAW : 8;
 	u32 : 24;
+	// TIMING 5
+	u32 CWL : 8;
+	u32 WTRS : 8;
+	u32 WTRL : 8;
+	u32 : 8;
+	// TIMING 6
+	u32 WR : 8;
+	u32 : 24;
 } HBM2_TIMINGS;
 
 typedef union {
@@ -193,7 +201,7 @@ typedef union {
 		u32 : 2;
 		u32 RP_RDA : 6;
 		u32 : 2;
-		u32 RP : 4;
+		u32 TRP : 4;
 		u32 RFC : 7;
 		u32 : 1;
 		u32 CKE : 4;
@@ -327,7 +335,7 @@ typedef struct {
 	int mmio;
 
 	char log[1000];
-	bool modify[6];
+	bool modify[8];
 	// HBM2
 	HBM2_TIMINGS hbm2;
 	RFC_TIMING rfc;
@@ -368,21 +376,27 @@ static void PrintCurrentValues(GPU *gpu)
 			(current.frequency == 0x11C) ? " (1000MHz)" :
 			(current.frequency == 0x11E) ? " (1200MHz)" : " (unknown)") << std::endl;
 		std::cout << "Timing 1\n";
-		std::cout << "  CL: " << current.CL << "\n";
-		std::cout << "  RAS: " << current.RAS << "\n";
-		std::cout << "  RCDRD: " << current.RCDRD << "\n";
+		std::cout << "  CL: " << current.CL << "\t";
+		std::cout << "  RAS: " << current.RAS << "\t";
+		std::cout << "  RCDRD: " << current.RCDRD << "\t";
 		std::cout << "  RCDWR: " << current.RCDWR << "\n";
 		std::cout << "Timing 2\n";
-		std::cout << "  RCAb: " << current.RCAb << "\n";
-		std::cout << "  RCPb: " << current.RCPb << "\n";
-		std::cout << "  RPAb: " << current.RPAb << "\n";
-		std::cout << "  RPPb: " << current.RPPb << "\n";
+		std::cout << "  RCAb (RC): " << current.RCAb << "\t";
+		std::cout << "  RCPb (RC): " << current.RCPb << "\t";
+		std::cout << "  RPAb (RP): " << current.RPAb << "\t";
+		std::cout << "  RPPb (RP): " << current.RPPb << "\n";
 		std::cout << "Timing 3\n";
-		std::cout << "  RRDS: " << current.RRDS << "\n";
-		std::cout << "  RRDL: " << current.RRDL << "\n";
+		std::cout << "  RRDS (RRD): " << current.RRDS << "\t";
+		std::cout << "  RRDL (RRD): " << current.RRDL << "\t";
 		std::cout << "  RTP: " << current.RTP << "\n";
 		std::cout << "Timing 4\n";
 		std::cout << "  FAW: " << current.FAW << "\n";
+		std::cout << "Timing 5\n";
+		std::cout << "  CWL: " << current.CWL << "\t";
+		std::cout << "  WTRS: " << current.WTRS << "\t";
+		std::cout << "  WTRL: " << current.WTRL << "\n";
+		std::cout << "Timing 6\n";
+		std::cout << "  WR: " << current.WR << "\n";
 		std::cout << "RFC Timing\n";
 		std::cout << "  RFC: " << gpu->rfc.RFC << "\n";
 		std::cout << "\n";
@@ -390,32 +404,32 @@ static void PrintCurrentValues(GPU *gpu)
 	else // GDDR5 & HBM
 	{
 		printf("CAS\n");
-		printf("  CL: %d\n", gpu->cas.CL);
-		printf("  W2R: %d\n", gpu->cas.W2R);
-		printf("  R2R: %d\n", gpu->cas.R2R);
-		printf("  CCLD: %d\n", gpu->cas.CCLD);
+		printf("  CL: %d\t", gpu->cas.CL);
+		printf("  W2R: %d\t", gpu->cas.W2R);
+		printf("  R2R: %d\t", gpu->cas.R2R);
+		printf("  CCLD: %d\t", gpu->cas.CCLD);
 		printf("  R2W: %d\n", gpu->cas.R2W);
 		printf("RAS\n");
-		printf("  RCDW: %d\n", gpu->ras.RCDW);
-		printf("  RCDWA: %d\n", gpu->ras.RCDWA);
-		printf("  RCDR: %d\n", gpu->ras.RCDR);
-		printf("  RCDRA: %d\n", gpu->ras.RCDRA);
-		printf("  RRD: %d\n", gpu->ras.RRD);
+		printf("  RCDW: %d\t", gpu->ras.RCDW);
+		printf("  RCDWA: %d\t", gpu->ras.RCDWA);
+		printf("  RCDR: %d\t", gpu->ras.RCDR);
+		printf("  RCDRA: %d\t", gpu->ras.RCDRA);
+		printf("  RRD: %d\t", gpu->ras.RRD);
 		printf("  RC: %d\n", gpu->ras.RC);
 		printf("MISC\n");
-		printf("  RFC: %d\n", gpu->misc.RFC);
-		printf("  RP: %d\n", gpu->misc.RP);
+		printf("  RFC: %d\t", gpu->misc.RFC);
+		printf("  TRP: %d\n", gpu->misc.TRP);
 		printf("MISC2\n");
 		printf("  FAW: %d\n", gpu->misc2.FAW);
 		printf("DRAM1\n");
-		printf("  ACTRD: %d\n", gpu->dram1.ACTRD);
-		printf("  ACTWR: %d\n", gpu->dram1.ACTWR);
-		printf("  RASMACTRD: %d\n", gpu->dram1.RASMACTRD);
+		printf("  ACTRD: %d\t", gpu->dram1.ACTRD);
+		printf("  ACTWR: %d\t", gpu->dram1.ACTWR);
+		printf("  RASMACTRD: %d\t", gpu->dram1.RASMACTRD);
 		printf("  RASMACTWR: %d\n", gpu->dram1.RASMACTWR);
 		printf("DRAM2\n");
-		printf("  RAS2RAS: %d\n", gpu->dram2.RAS2RAS);
-		printf("  RP: %d\n", gpu->dram2.RP);
-		printf("  WRPLUSRP: %d\n", gpu->dram2.WRPLUSRP);
+		printf("  RAS2RAS: %d\t", gpu->dram2.RAS2RAS);
+		printf("  RP: %d\t", gpu->dram2.RP);
+		printf("  WRPLUSRP: %d\t", gpu->dram2.WRPLUSRP);
 		printf("  BUS_TURN: %d\n", gpu->dram2.BUS_TURN);
 	}
 }
@@ -429,8 +443,11 @@ int main(int argc, const char *argv[])
 		std::cout << " AMD Memory Tweak\n"
 			" Read and modify memory timings on the fly\n"
 			" By Eliovp & A.Solodovnikov\n\n"
-			" Usage:\n"
-			" --gpu|--i [comma-separated gpu indices]\n"
+			" Global command line options:\n"
+			" --help \tShow this output\n"
+			" --gpu|--i [comma-separated gpu indices]\tSelected device(s)\n"
+			" --current \tList current timing values\n\n"
+			" Command line options: (HBM2)\n"
 			" --CL|--cl [value]\n"
 			" --RAS|--ras [value]\n"
 			" --RCDRD|--rcdrd [value]\n"
@@ -440,13 +457,41 @@ int main(int argc, const char *argv[])
 			" --RRD|--rrd [value]\n"
 			" --RTP|--rtp [value]\n"
 			" --FAW|--faw [value]\n"
-			" --RFC|--rfc [value]\n"
-			"\n"
-			" Example: ./amdmemtool -i 0 --faw 12\n\n"
+			" --CWL|--cwl [value]\n"
+			" --WTRS|--wtrs [value]\n"
+			" --WTRL|--wtrl [value]\n"
+			" --WR|--wr [value]\n"
+			" --RFC|--rfc [value]\n\n"
+			" Command line options: (GDDR5)\n"
+			" --CL|--cl [value]\n"
+			" --W2R|--w2r [value]\n"
+                        " --R2R|--r2r [value]\n"
+                        " --CCLD|--ccld [value]\n"
+                        " --R2W|--r2w [value]\n"
+                        " --RCDW|--rcdw [value]\n"
+                        " --RCDWA|--rcdwa [value]\n"
+                        " --RCDR|--rcdr [value]\n"
+                        " --RCDRA|--rcdra [value]\n"
+                        " --RRD|--rrd [value]\n"
+                        " --RC|--rc [value]\n"
+                        " --RFC|--rfc [value]\n"
+                        " --TRP|--trp [value]\n"
+                        " --FAW|--fawl [value]\n"
+                        " --ACTRD|--actrd [value]\n"
+                        " --ACTWR|--actwr [value]\n"
+                        " --RASMACTRD|--rasmactrd [value]\n"
+                        " --RASMACWTR|--rasmacwtr [value]\n"
+                        " --RAS2RAS|--ras2ras [value]\n"
+                        " --RP|--rp [value]\n"
+                        " --WRPLUSRP|--wrplusrp [value]\n"
+                        " --BUS_TURN|--bus_turn [value]\n\n"
+			" HBM2 Example usage: ./amdmemtool -i 0,3,5 --faw 12 --RFC 208\n"
+			" GDDR5 Example usage: ./amdmemtool -i 1,2,4 --RFC 43 --ras2ras 176\n\n"
 			" Make sure to run the program first with parameter --current to see what the current values are.\n"
 			" Current values may change based on state of the GPU,\n"
 			" in other words, make sure the GPU is under load when running --current\n"
-			" HBM2 Based GPU's do not need to be under load to apply timing changes.\n";
+			" HBM2 Based GPU's do not need to be under load to apply timing changes.\n"
+			" Hint: Certain timings such as CL (Cas Latency) are stability timings, lowering these will lower stability.\n";
 		return 0;
 	}
 
@@ -471,14 +516,14 @@ int main(int argc, const char *argv[])
 
 	qsort(gpus, gpuCount, sizeof(GPU), gpu_compare);
 
-	printf("Detected GPU's\n");
+	//printf("Detected GPU's\n");
 	for (int i = 0; i < gpuCount; i++)
 	{
 		GPU *gpu = &gpus[i];
 
 		char buffer[1024];
-		char *name = pci_lookup_name(pci, buffer, sizeof(buffer), PCI_LOOKUP_DEVICE, gpu->dev->vendor_id, gpu->dev->device_id);
-		printf(" (%s)\n", name);
+		//char *name = pci_lookup_name(pci, buffer, sizeof(buffer), PCI_LOOKUP_DEVICE, gpu->dev->vendor_id, gpu->dev->device_id);
+		//printf(" (%s)\n", name);
 
 		snprintf(buffer, sizeof(buffer)-1, "%04x:%02x:%02x.%d", gpu->dev->domain, gpu->dev->bus, gpu->dev->dev, gpu->dev->func);
 		int instance = pci_find_instance(buffer);
@@ -528,6 +573,8 @@ int main(int argc, const char *argv[])
 	for (int index = 0; index < gpuCount; index++)
 	{
 		GPU *gpu = &gpus[index];
+		char buffer[1024];
+                char *name = pci_lookup_name(pci, buffer, sizeof(buffer), PCI_LOOKUP_DEVICE, gpu->dev->vendor_id, gpu->dev->device_id);
 		if (gpu->dev && IsRelevantDeviceID(gpu->dev))
 		{
 			u64 affectedGPUs = 0xFFFFFFFFFFFFFFFF; // apply to all GPUs by default
@@ -547,7 +594,8 @@ int main(int argc, const char *argv[])
 				{
 					if (affectedGPUs & ((u64)1 << index))
 					{
-						std::cout << "GPU " << index << std::endl;
+						std::cout << "GPU " << index << ": ";
+						printf(" %s\t", name);
 						PrintCurrentValues(gpu);
 					}
 				}
@@ -631,16 +679,48 @@ int main(int argc, const char *argv[])
 							if (gpu->log[0]) strcat(gpu->log, ", ");
 							strcat(gpu->log, "FAW");
 						}
+						else if (ParseNumericArg(argc, argv, i, "--CWL", value))
+						{
+							gpu->hbm2.CWL = value;
+							gpu->modify[0] = true;
+							gpu->modify[5] = true;
+							if (gpu->log[0]) strcat(gpu->log, ", ");
+							strcat(gpu->log, "CWL");
+						}
+						else if (ParseNumericArg(argc, argv, i, "--WTRS", value))
+						{
+							gpu->hbm2.WTRS = value;
+							gpu->modify[0] = true;
+							gpu->modify[5] = true;
+							if (gpu->log[0]) strcat(gpu->log, ", ");
+							strcat(gpu->log, "WTRS");
+						}
+						else if (ParseNumericArg(argc, argv, i, "--WTRL", value))
+						{
+							gpu->hbm2.WTRL = value;
+							gpu->modify[0] = true;
+							gpu->modify[5] = true;
+							if (gpu->log[0]) strcat(gpu->log, ", ");
+							strcat(gpu->log, "WTRL");
+						}
+						else if (ParseNumericArg(argc, argv, i, "--WR", value))
+                                                {
+                                                        gpu->hbm2.WR = value;
+                                                        gpu->modify[0] = true;
+                                                        gpu->modify[6] = true;
+                                                        if (gpu->log[0]) strcat(gpu->log, ", ");
+                                                        strcat(gpu->log, "WR");
+                                                }
 						else if (ParseNumericArg(argc, argv, i, "--RFC", value))
 						{
 							gpu->rfc.RFC = value;
 							gpu->modify[0] = true;
-							gpu->modify[5] = true;
+							gpu->modify[7] = true;
 							if (gpu->log[0]) strcat(gpu->log, ", ");
 							strcat(gpu->log, "RFC");
 						}
 					}
-					else
+					else // GDDR5 & HBM
 					{
 						if (ParseNumericArg(argc, argv, i, "--RCDW", value))
 						{
@@ -726,12 +806,12 @@ int main(int argc, const char *argv[])
 							if (gpu->log[0]) strcat(gpu->log, ", ");
 							strcat(gpu->log, "RFC");
 						}
-						else if (ParseNumericArg(argc, argv, i, "--RP", value))
+						else if (ParseNumericArg(argc, argv, i, "--TRP", value))
 						{
-							gpu->misc.RP = value;
+							gpu->misc.TRP = value;
 							gpu->modify[2] = true;
 							if (gpu->log[0]) strcat(gpu->log, ", ");
-							strcat(gpu->log, "RP");
+							strcat(gpu->log, "TRP");
 						}
 						else if (ParseNumericArg(argc, argv, i, "--FAW", value))
 						{
@@ -813,7 +893,7 @@ int main(int argc, const char *argv[])
 				switch (DetermineMemoryType(gpu->dev))
 				{
 				case HBM2:
-					if (i == 5)
+					if (i == 7)
 					{
 						lseek(gpu->mmio, RFC_TIMING_ADDR, SEEK_SET);
 						write(gpu->mmio, &gpu->rfc, sizeof(gpu->rfc));
