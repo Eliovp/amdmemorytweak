@@ -158,11 +158,15 @@ typedef struct {
 typedef union {
 	u32 value;
 	struct {
-		u32 RFC : 8;
-		u32 : 24;
+		u32 RFC : 16;
+		u32 : 16;
 	};
 } RFC_TIMING;
-#define RFC_TIMING_ADDR 0x50260
+#define RFC_TIMING_ADDR_1 0x50260
+#define RFC_TIMING_ADDR_2 0x52260
+#define RFC_TIMING_ADDR_3 0x54260
+#define RFC_TIMING_ADDR_4 0x56260
+
 
 typedef union {
 	u32 value;
@@ -546,7 +550,7 @@ int main(int argc, const char *argv[])
 		case HBM2:
 			lseek(gpu->mmio, AMD_TIMING_REGS_BASE_1, SEEK_SET);
 			read(gpu->mmio, &gpu->hbm2, sizeof(gpu->hbm2));
-			lseek(gpu->mmio, RFC_TIMING_ADDR, SEEK_SET);
+			lseek(gpu->mmio, RFC_TIMING_ADDR_1, SEEK_SET);
 			read(gpu->mmio, &gpu->rfc, sizeof(gpu->rfc));
 			break;
 		case GDDR5:
@@ -895,8 +899,17 @@ int main(int argc, const char *argv[])
 				case HBM2:
 					if (i == 7)
 					{
-						lseek(gpu->mmio, RFC_TIMING_ADDR, SEEK_SET);
+						lseek(gpu->mmio, RFC_TIMING_ADDR_1, SEEK_SET);
 						write(gpu->mmio, &gpu->rfc, sizeof(gpu->rfc));
+
+						lseek(gpu->mmio, RFC_TIMING_ADDR_2, SEEK_SET);
+                                                write(gpu->mmio, &gpu->rfc, sizeof(gpu->rfc));
+
+						lseek(gpu->mmio, RFC_TIMING_ADDR_3, SEEK_SET);
+                                                write(gpu->mmio, &gpu->rfc, sizeof(gpu->rfc));
+
+						lseek(gpu->mmio, RFC_TIMING_ADDR_4, SEEK_SET);
+                                                write(gpu->mmio, &gpu->rfc, sizeof(gpu->rfc));
 					}
 					else
 					{
