@@ -167,6 +167,17 @@ typedef union {
 #define RFC_TIMING_ADDR_3 0x54260
 #define RFC_TIMING_ADDR_4 0x56260
 
+typedef union {
+        u32 value;
+        struct {
+                u32 REF : 16;
+                u32 : 16;
+        };
+} REF_TIMING;
+#define REF_TIMING_ADDR_1 0x50230
+#define REF_TIMING_ADDR_2 0x52230
+#define REF_TIMING_ADDR_3 0x54230
+#define REF_TIMING_ADDR_4 0x56230
 
 typedef union {
 	u32 value;
@@ -339,10 +350,11 @@ typedef struct {
 	int mmio;
 
 	char log[1000];
-	bool modify[8];
+	bool modify[9];
 	// HBM2
 	HBM2_TIMINGS hbm2;
 	RFC_TIMING rfc;
+	REF_TIMING ref;
 	// GDDR5
 	SEQ_RAS_TIMING ras;
 	SEQ_CAS_TIMING cas;
@@ -401,6 +413,8 @@ static void PrintCurrentValues(GPU *gpu)
 		std::cout << "  WTRL: " << current.WTRL << "\n";
 		std::cout << "Timing 6\n";
 		std::cout << "  WR: " << current.WR << "\n";
+		std::cout << "tREF Timing\n";
+                std::cout << "  REF: " << gpu->ref.REF << "\n";
 		std::cout << "RFC Timing\n";
 		std::cout << "  RFC: " << gpu->rfc.RFC << "\n";
 		std::cout << "\n";
@@ -465,6 +479,7 @@ int main(int argc, const char *argv[])
 			" --WTRS|--wtrs [value]\n"
 			" --WTRL|--wtrl [value]\n"
 			" --WR|--wr [value]\n"
+			" --REF|--ref [value]\n"
 			" --RFC|--rfc [value]\n\n"
 			" Command line options: (GDDR5)\n"
 			" --CL|--cl [value]\n"
@@ -550,6 +565,8 @@ int main(int argc, const char *argv[])
 		case HBM2:
 			lseek(gpu->mmio, AMD_TIMING_REGS_BASE_1, SEEK_SET);
 			read(gpu->mmio, &gpu->hbm2, sizeof(gpu->hbm2));
+			lseek(gpu->mmio, REF_TIMING_ADDR_1, SEEK_SET);
+                        read(gpu->mmio, &gpu->ref, sizeof(gpu->ref));
 			lseek(gpu->mmio, RFC_TIMING_ADDR_1, SEEK_SET);
 			read(gpu->mmio, &gpu->rfc, sizeof(gpu->rfc));
 			break;
@@ -715,11 +732,19 @@ int main(int argc, const char *argv[])
                                                         if (gpu->log[0]) strcat(gpu->log, ", ");
                                                         strcat(gpu->log, "WR");
                                                 }
+						else if (ParseNumericArg(argc, argv, i, "--REF", value))
+                                                {
+                                                        gpu->ref.REF = value;
+                                                        gpu->modify[0] = true;
+                                                        gpu->modify[7] = true;
+                                                        if (gpu->log[0]) strcat(gpu->log, ", ");
+                                                        strcat(gpu->log, "REF");
+                                                }
 						else if (ParseNumericArg(argc, argv, i, "--RFC", value))
 						{
 							gpu->rfc.RFC = value;
 							gpu->modify[0] = true;
-							gpu->modify[7] = true;
+							gpu->modify[8] = true;
 							if (gpu->log[0]) strcat(gpu->log, ", ");
 							strcat(gpu->log, "RFC");
 						}
@@ -898,6 +923,20 @@ int main(int argc, const char *argv[])
 				{
 				case HBM2:
 					if (i == 7)
+                                        {
+                                                lseek(gpu->mmio, REF_TIMING_ADDR_1, SEEK_SET);
+                                                write(gpu->mmio, &gpu->ref, sizeof(gpu->ref));
+
+                                                lseek(gpu->mmio, REF_TIMING_ADDR_2, SEEK_SET);
+                                                write(gpu->mmio, &gpu->ref, sizeof(gpu->ref));
+
+                                                lseek(gpu->mmio, REF_TIMING_ADDR_3, SEEK_SET);
+                                                write(gpu->mmio, &gpu->ref, sizeof(gpu->ref));
+
+                                                lseek(gpu->mmio, REF_TIMING_ADDR_4, SEEK_SET);
+                                                write(gpu->mmio, &gpu->ref, sizeof(gpu->ref));
+                                        }
+					if (i == 8)
 					{
 						lseek(gpu->mmio, RFC_TIMING_ADDR_1, SEEK_SET);
 						write(gpu->mmio, &gpu->rfc, sizeof(gpu->rfc));
