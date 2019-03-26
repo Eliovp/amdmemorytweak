@@ -495,7 +495,7 @@ int main(int argc, const char *argv[])
                         " --RC|--rc [value]\n"
                         " --RFC|--rfc [value]\n"
                         " --TRP|--trp [value]\n"
-                        " --FAW|--fawl [value]\n"
+                        " --FAW|--faw [value]\n"
                         " --ACTRD|--actrd [value]\n"
                         " --ACTWR|--actwr [value]\n"
                         " --RASMACTRD|--rasmactrd [value]\n"
