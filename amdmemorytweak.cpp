@@ -249,8 +249,10 @@ typedef union {
 	} rx;
 	struct {
 		u32 RP_WRA : 8;
-		u32 RP_RDA : 7;
-		u32 TRP : 5;
+		u32 : 1;
+		u32 RP_RDA : 6;
+		u32 : 1;
+		u32 TRP : 4;
 		u32 RFC : 9;
 		u32 : 3;
 	} r9;
