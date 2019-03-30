@@ -63,7 +63,9 @@ Command line options: (HBM2)
 
 --RP|--rp [value]
 
---RRD|--rrd [value]
+--RRDS|--rrds [value]
+
+--RRDL|--rrdl [value]
 
 --RTP|--rtp [value]
 
