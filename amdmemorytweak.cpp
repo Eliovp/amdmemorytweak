@@ -434,8 +434,8 @@ static void PrintCurrentValues(GPU *gpu)
 		std::cout << "  RPAb (RP): " << current.RPAb << "\t";
 		std::cout << "  RPPb (RP): " << current.RPPb << "\n";
 		std::cout << "Timing 3\n";
-		std::cout << "  RRDS (RRD): " << current.RRDS << "\t";
-		std::cout << "  RRDL (RRD): " << current.RRDL << "\t";
+		std::cout << "  RRDS: " << current.RRDS << "\t";
+		std::cout << "  RRDL: " << current.RRDL << "\t";
 		std::cout << "  RTP: " << current.RTP << "\n";
 		std::cout << "Timing 4\n";
 		std::cout << "  FAW: " << current.FAW << "\n";
@@ -534,7 +534,8 @@ int main(int argc, const char *argv[])
 			" --RCDWR|--rcdwr [value]\n"
 			" --RC|--rc [value]\n"
 			" --RP|--rp [value]\n"
-			" --RRD|--rrd [value]\n"
+			" --RRDS|--rrds [value]\n"
+			" --RRDL|--rrdl [value]\n"
 			" --RTP|--rtp [value]\n"
 			" --FAW|--faw [value]\n"
 			" --CWL|--cwl [value]\n"
@@ -766,15 +767,22 @@ int main(int argc, const char *argv[])
 							if (gpu->log[0]) strcat(gpu->log, ", ");
 							strcat(gpu->log, "RP");
 						}
-						else if (ParseNumericArg(argc, argv, i, "--RRD", value))
+						else if (ParseNumericArg(argc, argv, i, "--RRDS", value))
 						{
 							gpu->hbm2.RRDS = value;
-							gpu->hbm2.RRDL = value;
 							gpu->modify[0] = true;
 							gpu->modify[3] = true;
 							if (gpu->log[0]) strcat(gpu->log, ", ");
 							strcat(gpu->log, "RRD");
 						}
+						else if (ParseNumericArg(argc, argv, i, "--RRDL", value))
+                                                {
+                                                        gpu->hbm2.RRDL = value;
+                                                        gpu->modify[0] = true;
+                                                        gpu->modify[3] = true;
+                                                        if (gpu->log[0]) strcat(gpu->log, ", ");
+                                                        strcat(gpu->log, "RRD");
+                                                }
 						else if (ParseNumericArg(argc, argv, i, "--RTP", value))
 						{
 							gpu->hbm2.RTP = value;
