@@ -661,7 +661,7 @@ int main(int argc, const char *argv[])
 			read(gpu->mmio, &gpu->misc2, sizeof(gpu->misc2));
 			lseek(gpu->mmio, MC_ARB_DRAM_TIMING, SEEK_SET);
 			read(gpu->mmio, &gpu->dram1, sizeof(gpu->dram1));
-			lseek(gpu->mmio, MC_ARB_DRAM_TIMING, SEEK_SET);
+			lseek(gpu->mmio, MC_ARB_DRAM_TIMING2, SEEK_SET);
 			read(gpu->mmio, &gpu->dram2, sizeof(gpu->dram2));
 			break;
 		/* case HBM:
@@ -676,7 +676,7 @@ int main(int argc, const char *argv[])
 			read(gpu->mmio, &gpu->misc2, sizeof(gpu->misc2));
 			lseek(gpu->mmio, MC_ARB_DRAM_TIMING, SEEK_SET);
 			read(gpu->mmio, &gpu->dram1, sizeof(gpu->dram1));
-			lseek(gpu->mmio, MC_ARB_DRAM_TIMING, SEEK_SET);
+			lseek(gpu->mmio, MC_ARB_DRAM_TIMING2, SEEK_SET);
 			read(gpu->mmio, &gpu->dram2, sizeof(gpu->dram2));
 			break; */
 		}
@@ -1217,7 +1217,7 @@ int main(int argc, const char *argv[])
 						write(gpu->mmio, &gpu->dram1, sizeof(gpu->dram1));
 						break;
 					case 5:
-						lseek(gpu->mmio, MC_ARB_DRAM_TIMING, SEEK_SET);
+						lseek(gpu->mmio, MC_ARB_DRAM_TIMING2, SEEK_SET);
 						write(gpu->mmio, &gpu->dram2, sizeof(gpu->dram2));
 						break;
 					}
