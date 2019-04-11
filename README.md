@@ -1,187 +1,126 @@
 # AMD Memory Tweak
-Read and modify memory timings on the fly
-﻿
 ---
-## Overview
-AMD Memory Tweak lets you read and change memory timings at all times.
-
-## Support
-* Supports GDDR5 based GPU's
-* Supports (HBM) & HBM2 based GPU's
-* Linux
-* Windows (Beta)
-
-## System Requirements
-* AMD Radeon GDDR5|HBM|HBM2-based GPU(s).
-* amdgpu-pro | rocm
-
-* Adrenaline Driver (Tested on Adrenalin-2019-Edition-19.4.1) 
-
-## Building (Linux)
-Prerequisites
-  * pciutils-dev | libpci-dev
-  * build-essential
-  
-Clone the repository
-  * git clone https://github.com/Eliovp/amdmemorytweak.git
-  
-cd amdmemorytweak
-
-Build
-  * g++ amdmemorytweak.cpp -lpci -lresolv -o amdmemtweak
-
-
-## Building (Windows)
-  * Clone the repository
-  * Launch Visual Studio Project
-  * Build :)
-
-
-## Usage
-
-Global command line options:
-
---help         Show this output
-
---gpu|--i [comma-separated gpu indices]        Selected device(s)
-
---current      List current timing values
-
-
-
-Global command line options:
-
---help         Show this output
-
---gpu|--i [comma-separated gpu indices]        Selected device(s)
-
---current      List current timing values
-
-
-
-Command line options: (HBM2)
-
---CL|--cl [value]
-
---RAS|--ras [value]
-
---RCDRD|--rcdrd [value]
-
---RCDWR|--rcdwr [value]
-
---RC|--rc [value]
-
---RP|--rp [value]
-
---RRDS|--rrds [value]
-
---RRDL|--rrdl [value]
-
---RTP|--rtp [value]
-
---FAW|--faw [value]
-
---CWL|--cwl [value]
-
---WTRS|--wtrs [value]
-
---WTRL|--wtrl [value]
-
---WR|--wr [value]
-
---WRRD|--wrrd [value]
-
---RDWR|--rdwr [value]
-
---REF|--ref [value]
-
---MRD|--mrd [value]
-
---MOD|--mod [value]
-
---PD|--pd [value]
-
---CKSRE|--cksre [value]
-
---CKSRX|--cksrx [value]
-
---RFC|--rfc [value]
-
-
-
-Command line options: (GDDR5)
-
---CL|--cl [value]
-
---W2R|--w2r [value]
-
---R2R|--r2r [value]
-
---CCLD|--ccld [value]
-
---R2W|--r2w [value]
-
---NOPR|--nopr [value]
-
---NOPW|--nopw [value]
-
---RCDW|--rcdw [value]
-
---RCDWA|--rcdwa [value]
-
---RCDR|--rcdr [value]
-
---RCDRA|--rcdra [value]
-
---RRD|--rrd [value]
-
---RC|--rc [value]
-
---RFC|--rfc [value]
-
---TRP|--trp [value]
-
---RP_WRA|--rp_wra [value]
-
---RP_RDA|--rp_rda [value]
-
---WDATATR|--wdatatr [value]
-
---T32AW|--t32aw [value]
-
---CRCWL|--crcwl [value]
-
---CRCRL|--crcrl [value]
-
---FAW|--faw [value]
-
---PA2WDATA|--pa2wdata [value]
-
---PA2RDATA|--pa2rdata [value]
-
---ACTRD|--actrd [value]
-
---ACTWR|--actwr [value]
-
---RASMACTRD|--rasmactrd [value]
-
---RASMACWTR|--rasmacwtr [value]
-
---RAS2RAS|--ras2ras [value]
-
---RP|--rp [value]
-
---WRPLUSRP|--wrplusrp [value]
-
---BUS_TURN|--bus_turn [value]
-
- 
-
-HBM2 Example usage: ./amdmemtool -i 0,3,5 --faw 12 --RFC 208
-
-GDDR5 Example usage: ./amdmemtool -i 1,2,4 --RFC 43 --ras2ras 176
-
-(These are just examples!)
+#### Read and modify memory timings "on the fly"
+---
+
+### Support
+
+  - GDDR5 Based AMD GPU's
+  - ~~HBM~~(later) HBM2 Based AMD GPU's
+  - Linux
+  - Windows (Beta)
+
+# Requirements
+
+  - One or more AMD Radeon GPU's
+  - amdgpu-pro | ROCM (Verified working on amdgpu-pro 18.30)
+  - Adrenaline (Verified working on v19.4.1)
+
+# Build (Linux)
+Prerequisites:
+  - [pciutils-dev](https://pkgs.org/download/pciutils-dev) | [libpci-dev](https://pkgs.org/download/libpci-dev)
+  - [build-essential](https://pkgs.org/download/build-essential)
+  - [git]()
+
+Building:
+```sh
+$ git clone https://github.com/Eliovp/amdmemorytweak
+$ cd amdmemorytweak/linux
+$ g++ amdmemorytweak.cpp -lpci -lresolv -o amdmemtweak
+```
+
+# Build (Windows)
+  - Clone repo
+  - Launch VS Project
+  - Build!
+
+# Usage & Instructions
+
+##### Global command line options
+##
+
+| Command | User Input | Extra Info |
+| ------ | ------ | ------ |
+| - -help |  | Show this output |
+| - -gpu\|- -i | Comma-Seperated gpu indices | Selected device(s) |
+| - -current |  | List current twiming values |
+
+##### Command line options: (HBM2)
+##
+| Command | User Input | Extra Info |
+| ------ | ------ | ------ |
+| - -CL\|- -cl | [value] | Cas Latency |
+| - -RAS\|- -ras | [value] | Active to PRECHARGE command period |
+| - -RCDRD\|- -rcdrd | [value] | Active to READ command delay |
+| - -RCDWR\|- -rcdwr | [value] | Active to WRITE command delay |
+| - -RC\|- -rc | [value] | Active to Active command period |
+| - -RP\|- -rp | [value] | Precharge command period |
+| - -RRDS\|- -rrds | [value] | Active bank A to Active or Single bank Refresh bank B command delay different bank group |
+| - -RRDL\|- -rrdl | [value] | Active bank A to Active or Single Bank Refresh bank B command delay same bank group |
+| - -RTP\|- -rtp | [value] | Read to precharge delay |
+| - -FAW\|- -faw | [value] | Four Active Window |
+| - -CWL\|- -cwl | [value] | |
+| - -WTRS\|- -wtrs | [value] | Write to read delay |
+| - -WTRL\|- -wtrl | [value] | tWTR = tWTRL when bank groups is enabled and both WRITE and READ |
+| - -WR\|- -wr | [value] | Write Recovery Time |
+| - -WRRD\|- -wrrd | [value] | |
+| - -RDWR\|- -rdwr | [value] | |
+| - -REF\|- -ref | [value] | Average Periodic Refresh Interval |
+| - -MRD\|- -mrd | [value] | Mode Register Set command cycle time |
+| - -MOD\|- -mod | [value] | Mode Register Set command update delay |
+| - -PD\|- -pd | [value] | Power down entry to exit time |
+| - -CKSRE\|- -cksre | [value] | Valid CK Clock required after self refresh or power-down entry |
+| - -CKSRX\|- -cksrx | [value] | Valid CK Clock required before self refresh power down exit |
+| - -RFC\|- -rfc | [value] | Auto Refresh Row Cycle Time |
+
+##### Command line options: (GDDR5)
+##
+| Command | User Input | Extra Info |
+| ------ | ------ | ------ |
+| - -CL\|- -cl | [value] | CAS to data return latency |
+| - -W2R\|- -w2r | [value] | Write to read turn |
+| - -R2R\|- -r2r | [value] | Read to read time |
+| - -CCLD\|- -ccld | [value] | Cycles between r/w from bank A to r/w bank B |
+| - -R2W\|- -r2w | [value] | Read to write turn |
+| - -NOPR\|- -nopr | [value] | Extra cycle(s) between successive read bursts |
+| - -NOPW\|- -nopw | [value] | Extra cycle(s) between successive write bursts |
+| - -RCDW\|- -rcdw | [value] | # of cycles from active to write |
+| - -RCDWA\|- -rcdwa | [value] | # of cycles from active to write with auto-precharge |
+| - -RCDR\|- -rcdr | [value] | # of cycles from active to read |
+| - -RCDRA\|- -rcdra | [value] | # of cycles from active to read with auto-precharge |
+| - -RRD\|- -rrd | [value] | # of cycles from active bank a to active bank b |
+| - -RC\|- -rc | [value] | # of cycles from active to active/auto refresh |
+| - -RFC\|- -rfc | [value] | Auto-refresh command period |
+| - -TRP\|- -trp | [value] | Precharge command period |
+| - -RP_WRA\|- -rp_wra | [value] | From write with auto-precharge to active |
+| - -RP_RDA\|- -rp_rda | [value] | From read with auto-precharge to active |
+| - -WDATATR\|- -wdatatr | [value] |  |
+| - -T32AW\|- -t32aw | [value] |  |
+| - -CRCWL\|- -crcwl | [value] |  |
+| - -CRCRL\|- -crcrl | [value] |  |
+| - -FAW\|- -faw | [value] |  |
+| - -PA2WDATA\|- -pa2wdata | [value] |  |
+| - -PA2RDATA\|- -pa2rdata | [value] |  |
+| - -ACTRD\|- -actrd | [value] |  |
+| - -ACTWR\|- -actwr | [value] |  |
+| - -RASMACTRD\|- -rasmactrd | [value] |  |
+| - -RASMACWTR\|- -rasmacwtr | [value] |  |
+| - -RAS2RAS\|- -ras2ras | [value] |  |
+| - -RP\|- -rp | [value] |  |
+| - -WRPLUSRP\|- -wrplusrp | [value] |  |
+| - -BUS_TURN\|- -bus_turn | [value] |  |
+
+##### Example Usage (Linux):
+##
+```sh
+$ sudo ./amdmemtool --i 0,3,5 --faw 100 --RFC 100
+```
+
+##### Example Usage (Windows):
+##
+    C:\Users\You\Desktop\WinAMDTweak.exe --i 1,2,4 --rfc 100 --RC 100
+
+(These are just examples! Don't try these at home! :p)
 
 
 ## Some extra info
@@ -189,17 +128,27 @@ Not all possible timings have been exposed.
 However, it's not such a big deal to add more of them in the tool.
 The ones available are more or like the most important ones.
 
+Some users have reported very nice results already, please continue to contribute to these results.
+[Example](https://bitcointalk.org/index.php?topic=5123724.msg50562384#msg50562384)
+
 Have fun!
 
 Cheers
 
 
-## Tips (Although i'm not expecting too much..)
-BTC
-  * 3GBgapb49BZ7fBPXnbetqbnMn2KiGNzUXf
+## Tips
+- 3GBgapb49BZ7fBPXnbetqbnMn2KiGNzUXf
+- 0x8C77C212da3e12cad1AfB8824CF74b1CC04d2F7C
   
-ETH
-  * 0x8C77C212da3e12cad1AfB8824CF74b1CC04d2F7C
-  
-In the unlikely event of not owning either BTC or ETH and you do want to be an amazing person and tip,
-shapeshift, changelly, simpleswap, ... are great ways to solve that "issue" ;-)
+> In the unlikely event of not owning either BTC or ETH and you do want to be an amazing person and tip,
+> shapeshift, changelly, simpleswap, ... are great ways to solve that "issue" ;-)
+
+### Todos
+
+ - Fix HBM gen1
+ - ...
+
+License
+----
+
+##### GPL
