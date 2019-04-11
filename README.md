@@ -7,14 +7,17 @@ AMD Memory Tweak lets you read and change memory timings at all times.
 
 ## Support
 * Supports GDDR5 based GPU's
-* Supports HBM & HBM2 based GPU's
-* Linux only
+* Supports (HBM) & HBM2 based GPU's
+* Linux
+* Windows (Beta)
 
 ## System Requirements
 * AMD Radeon GDDR5|HBM|HBM2-based GPU(s).
 * amdgpu-pro | rocm
 
-## Building
+* Adrenaline Driver (Tested on Adrenalin-2019-Edition-19.4.1) 
+
+## Building (Linux)
 Prerequisites
   * pciutils-dev | libpci-dev
   * build-essential
@@ -26,6 +29,13 @@ cd amdmemorytweak
 
 Build
   * g++ amdmemorytweak.cpp -lpci -lresolv -o amdmemtweak
+
+
+## Building (Windows)
+  * Clone the repository
+  * Launch Visual Studio Project
+  * Build :)
+
 
 ## Usage
 
@@ -105,7 +115,7 @@ Command line options: (GDDR5)
 
 --W2R|--w2r [value]
 
---CCDS|--ccds [value]
+--R2R|--r2r [value]
 
 --CCLD|--ccld [value]
 
@@ -170,6 +180,8 @@ Command line options: (GDDR5)
 HBM2 Example usage: ./amdmemtool -i 0,3,5 --faw 12 --RFC 208
 
 GDDR5 Example usage: ./amdmemtool -i 1,2,4 --RFC 43 --ras2ras 176
+
+(These are just examples!)
 
 
 ## Some extra info
