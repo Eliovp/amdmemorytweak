@@ -63,20 +63,46 @@ $ g++ amdmemorytweak.cpp -lpci -lresolv -o amdmemtweak
 | - -WTRS\|- -wtrs | [value] | Write to read delay |
 | - -WTRL\|- -wtrl | [value] | tWTR = tWTRL when bank groups is enabled and both WRITE and READ |
 | - -WR\|- -wr | [value] | Write Recovery Time |
+| - -RREFD\|- -rrefd | [value] | |
+| - -RDRDDD\|- -rdrddd | [value] | |
+| - -RDRDSD\|- -rdrdsd | [value] | |
+| - -RDRDSC\|- -rdrdsc | [value] | |
+| - -RDRDSCL\|- -rdrdscl | [value] | |
+| - -WRWRDD\|- -wrwrdd | [value] | |
+| - -WRWRSD\|- -wrwrsd | [value] | |
+| - -WRWRSC\|- -wrwrsc | [value] | |
+| - -WRWRSCL\|- -wrwrscl | [value] | |
 | - -WRRD\|- -wrrd | [value] | |
 | - -RDWR\|- -rdwr | [value] | |
 | - -REF\|- -ref | [value] | Average Periodic Refresh Interval |
 | - -MRD\|- -mrd | [value] | Mode Register Set command cycle time |
 | - -MOD\|- -mod | [value] | Mode Register Set command update delay |
+| - -XS\|- -xs | [value] | Self refresh exit period |
+| - -XSMRS\|- -xsmrs | [value] | |
 | - -PD\|- -pd | [value] | Power down entry to exit time |
 | - -CKSRE\|- -cksre | [value] | Valid CK Clock required after self refresh or power-down entry |
 | - -CKSRX\|- -cksrx | [value] | Valid CK Clock required before self refresh power down exit |
+| - -RFCPB\|- -rfcpb | [value] | |
+| - -STAG\|- -stag | [value] | |
+| - -XP\|- -xp | [value] | |
+| - -CPDED\|- -cpded | [value] | |
+| - -CKE\|- -cke | [value] | |
+| - -RDDATA\|- -rddata | [value] | |
+| - -WRLAT\|- -wrlat | [value] | |
+| - -RDLAT\|- -rdlat | [value] | |
+| - -WRDATA\|- -wrdata | [value] | |
+| - -CKESTAG\|- -ckestag | [value] | |
 | - -RFC\|- -rfc | [value] | Auto Refresh Row Cycle Time |
 
 ##### Command line options: (GDDR5)
 ##
 | Command | User Input | Extra Info |
 | ------ | ------ | ------ |
+| - -CKSRE\|- -cksre | [value] |  |
+| - -CKSRX\|- -cksrx | [value] |  |
+| - -CKE_PULSE\|- -cke_pulse | [value] |  |
+| - -CKE\|- -cke | [value] |  |
+| - -SEQ_IDLE\|- -seq_idle | [value] |  |
 | - -CL\|- -cl | [value] | CAS to data return latency |
 | - -W2R\|- -w2r | [value] | Write to read turn |
 | - -R2R\|- -r2r | [value] | Read to read time |
@@ -101,6 +127,7 @@ $ g++ amdmemorytweak.cpp -lpci -lresolv -o amdmemtweak
 | - -FAW\|- -faw | [value] |  |
 | - -PA2WDATA\|- -pa2wdata | [value] |  |
 | - -PA2RDATA\|- -pa2rdata | [value] |  |
+| - -RAS\|- -ras | [value] |  |
 | - -ACTRD\|- -actrd | [value] |  |
 | - -ACTWR\|- -actwr | [value] |  |
 | - -RASMACTRD\|- -rasmactrd | [value] |  |
