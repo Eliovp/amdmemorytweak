@@ -1270,7 +1270,7 @@ int main(int argc, const char *argv[])
 						else if (ParseNumericArg(argc, argv, i, "--CL", value))
 						{
 							gpu->cas.CL = value;
-							gpu->modify[1] = true;
+							gpu->modify[2] = true;
 							if (gpu->log[0]) strcat(gpu->log, ", ");
 							strcat(gpu->log, "CL");
 						}
