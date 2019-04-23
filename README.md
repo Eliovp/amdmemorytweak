@@ -26,7 +26,7 @@ Building:
 ```sh
 $ git clone https://github.com/Eliovp/amdmemorytweak
 $ cd amdmemorytweak/linux
-$ g++ amdmemorytweak.cpp -lpci -lresolv -o amdmemtweak
+$ g++ AmdMemTweak.cpp -lpci -lresolv -o amdmemtweak
 ```
 
 # Build (Windows)
