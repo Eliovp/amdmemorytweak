@@ -3,6 +3,8 @@
 #### Read and modify memory timings "on the fly"
 ---
 
+![alt text](http://eliovp.com/LatestGUIVega.png)
+
 ### Support
 
   - GDDR5 Based AMD GPU's
