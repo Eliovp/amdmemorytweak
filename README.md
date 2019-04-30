@@ -3,7 +3,7 @@
 #### Read and modify memory timings "on the fly"
 ---
 
-![alt text](http://eliovp.com/LatestGUIVega.png)
+![alt text](http://eliovp.com/latestGUIR7incl.png)
 
 ### Support
 
