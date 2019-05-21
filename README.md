@@ -8,7 +8,7 @@
 ### Support
 
   - GDDR5 Based AMD GPU's
-  - ~~HBM~~(later) HBM2 Based AMD GPU's
+  - HBM / HBM2 Based AMD GPU's
   - Linux
   - Windows (Beta)
 
@@ -16,7 +16,7 @@
 
   - One or more AMD Radeon GPU's
   - amdgpu-pro | ROCM (Verified working on amdgpu-pro 18.30)
-  - Adrenaline (Verified working on v19.4.1)
+  - Adrenaline (Verified working on v19.4.1/v19.5.*)
 
 # Build (Linux)
 Prerequisites:
@@ -44,6 +44,7 @@ $ g++ AmdMemTweak.cpp -lpci -lresolv -o amdmemtweak
 | Command | User Input | Extra Info |
 | ------ | ------ | ------ |
 | - -help |  | Show this output |
+| - -version\|--v |  | Show version info |
 | - -gpu\|- -i | Comma-Seperated gpu indices | Selected device(s) |
 | - -current |  | List current twiming values |
 
@@ -96,6 +97,46 @@ $ g++ AmdMemTweak.cpp -lpci -lresolv -o amdmemtweak
 | - -CKESTAG\|- -ckestag | [value] | |
 | - -RFC\|- -rfc | [value] | Auto Refresh Row Cycle Time |
 
+##### Command line options: (HBM)
+##
+| Command | User Input | Extra Info |
+| ------ | ------ | ------ |
+| - -CKSRE\|- -cksre | [value] |  |
+| - -CKSRX\|- -cksrx | [value] |  |
+| - -CKE_PULSE\|- -cke_pulse | [value] |  |
+| - -CKE\|- -cke | [value] |  |
+| - -SEQ_IDLE\|- -seq_idle | [value] |  |
+| - -CL\|- -cl | [value] | CAS to data return latency |
+| - -W2R\|- -w2r | [value] | Write to read turn |
+| - -R2R\|- -r2r | [value] | Read to read time |
+| - -CCDL\|- -ccdl | [value] | Cycles between r/w from bank A to r/w bank B |
+| - -R2W\|- -r2w | [value] | Read to write turn |
+| - -NOPR\|- -nopr | [value] | Extra cycle(s) between successive read bursts |
+| - -NOPW\|- -nopw | [value] | Extra cycle(s) between successive write bursts |
+| - -RCDW\|- -rcdw | [value] | # of cycles from active to write |
+| - -RCDWA\|- -rcdwa | [value] | # of cycles from active to write with auto-precharge |
+| - -RCDR\|- -rcdr | [value] | # of cycles from active to read |
+| - -RCDRA\|- -rcdra | [value] | # of cycles from active to read with auto-precharge |
+| - -RRD\|- -rrd | [value] | # of cycles from active bank a to active bank b |
+| - -RC\|- -rc | [value] | # of cycles from active to active/auto refresh |
+| - -MRD\|- -mrd | [value] |  |
+| - -RRDL\|- -rrdl | [value] |  |
+| - -RFC\|- -rfc | [value] | Auto-refresh command period |
+| - -TRP\|- -trp | [value] | Precharge command period |
+| - -RP_WRA\|- -rp_wra | [value] | From write with auto-precharge to active |
+| - -RP_RDA\|- -rp_rda | [value] | From read with auto-precharge to active |
+| - -WDATATR\|- -wdatatr | [value] |  |
+| - -T32AW\|- -t32aw | [value] |  |
+| - -CRCWL\|- -crcwl | [value] |  |
+| - -CRCRL\|- -crcrl | [value] |  |
+| - -FAW\|- -faw | [value] |  |
+| - -PA2WDATA\|- -pa2wdata | [value] |  |
+| - -PA2RDATA\|- -pa2rdata | [value] |  |
+| - -REF\|- -ref | [value] | Refresh Rate |
+| - -ENB\|- -enb | [value] |  |
+| - -CNT\|- -cnt | [value] |  |
+| - -TRC\|- -trc | [value] |  |
+
 ##### Command line options: (GDDR5)
 ##
 | Command | User Input | Extra Info |
@@ -108,7 +149,7 @@ $ g++ AmdMemTweak.cpp -lpci -lresolv -o amdmemtweak
 | - -CL\|- -cl | [value] | CAS to data return latency |
 | - -W2R\|- -w2r | [value] | Write to read turn |
 | - -R2R\|- -r2r | [value] | Read to read time |
-| - -CCLD\|- -ccld | [value] | Cycles between r/w from bank A to r/w bank B |
+| - -CCDL\|- -ccdl | [value] | Cycles between r/w from bank A to r/w bank B |
 | - -R2W\|- -r2w | [value] | Read to write turn |
 | - -NOPR\|- -nopr | [value] | Extra cycle(s) between successive read bursts |
 | - -NOPW\|- -nopw | [value] | Extra cycle(s) between successive write bursts |
@@ -138,6 +179,7 @@ $ g++ AmdMemTweak.cpp -lpci -lresolv -o amdmemtweak
 | - -RP\|- -rp | [value] |  |
 | - -WRPLUSRP\|- -wrplusrp | [value] |  |
 | - -BUS_TURN\|- -bus_turn | [value] |  |
+| - -REF\|- -ref | [value] | Refresh Rate |
 
 ##### Example Usage (Linux):
 ##
@@ -151,14 +193,30 @@ $ sudo ./amdmemtool --i 0,3,5 --faw 100 --RFC 100
 
 (These are just examples! Don't try these at home! :p)
 
+Make sure to run the program first with parameter --current to see what the current values are.
+Current values may change based on state of the GPU,
+in other words, make sure the GPU is under load when running --current.
+HBM2 Based GPU's do not need to be under load to apply timing changes.
+It is often better to apply new timings before starting a benchmark/mining tool.
+
+Hints: 
+Some timings are stability timings, lowering these will lower stability. Such as tRC.
+Some timings might require a higher value for performance to improve. Such as tREF.
+Some timings have a min/max value, going outside this range will result into it defaulting back to original value. Such as tCL
+Some timings are dynamic, they change based on the vbios values and active clocks. Dram timings.
+...
+
+Row Access Timings tRC, tRAS, tRCDRD, tRCDWR, tRRDL, tRRDS, tFAW, tRTP
+Column Access Timings tCCDL, tCCDS, tCCDR, tWTRL, tWTRS, tRTW,
+Refresh Timings tRFC, tRFCSB, tRREFD, tREFI
 
 ## Some extra info
-Not all possible timings have been exposed.
+Still not all possible timings have been exposed.
 However, it's not such a big deal to add more of them in the tool.
 The ones available are more or like the most important ones.
 
 Some users have reported very nice results already, please continue to contribute to these results.
-[Example](https://bitcointalk.org/index.php?topic=5123724.msg50562384#msg50562384)
+[Example](https://bitcointalk.org/index.php?topic=5123724)
 
 Have fun!
 
@@ -174,8 +232,7 @@ Cheers
 
 ### Todos
 
- - Fix HBM gen1
- - ...
+ - Nothing
 
 License
 ----
