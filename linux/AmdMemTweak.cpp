@@ -44,6 +44,8 @@ extern "C" {
 #define PCI_VENDOR_ID_AMD 0x1022
 #define PCI_VENDOR_ID_ATI 0x1002
 
+#define VERSION "AMD Memory Tweak Linux CLI version 0.1.8\n"
+
 bool IsAmdDisplayDevice(struct pci_dev *dev)
 {
 	if ((dev->device_class >> 8) == PCI_BASE_CLASS_DISPLAY)
@@ -73,7 +75,7 @@ bool IsRelevantDeviceID(struct pci_dev *dev)
 		(dev->device_id == 0x67c7) || // Ellesmere [Radeon Pro WX 5100]
 		(dev->device_id == 0x67ef) || // Baffin [Radeon RX 460/560D / Pro 450/455/460/555/555X/560/560X]
 		(dev->device_id == 0x67ff) || // Baffin [Radeon RX 550 640SP / RX 560/560X]
-		// (dev->device_id == 0x7300) || // Fiji [Radeon R9 FURY / NANO Series]
+		(dev->device_id == 0x7300) || // Fiji [Radeon R9 FURY / NANO Series]
 		(dev->device_id == 0x67b0) || // Hawaii XT / Grenada XT [Radeon R9 290X/390X]
 		(dev->device_id == 0x67b1) || // Hawaii PRO [Radeon R9 290/390]
 		(dev->device_id == 0x6798) || // Tahiti XT [Radeon HD 7970/8970 OEM / R9 280X]
@@ -108,17 +110,10 @@ static MemoryType DetermineMemoryType(struct pci_dev *dev)
 		{ 0x1002, 0x66af, HBM2 }, // "Radeon Vega20", CHIP_VEGA20
 		{ 0x1002, 0x66af, HBM2 }, // "Radeon VII", CHIP_VEGA20
 		/* Vega */
-		{ 0x1002, 0x687f, HBM2 }, // "Radeon RX Vega", CHIP_VEGA10
-		{ 0x1002, 0x687f, HBM2 }, // "Radeon RX Vega 64", CHIP_VEGA10
-		{ 0x1002, 0x687f, HBM2 }, // "Radeon RX Vega 64", CHIP_VEGA10
-		{ 0x1002, 0x687f, HBM2 }, // "Radeon RX Vega 56", CHIP_VEGA10
+		{ 0x1002, 0x687f, HBM2 }, // "Radeon RX Vega 56/64", CHIP_VEGA10
 		{ 0x1002, 0x6863, HBM2 }, // "Radeon Vega Frontier Edition", CHIP_VEGA10
-		/* Fury/Nano  Support will Follow later */
-		/*{ 0x1002, 0x7300, HBM }, // "Radeon R9 Fury/Nano/X", CHIP_FIJI
+		/* Fury/Nano */
 		{ 0x1002, 0x7300, HBM }, // "Radeon R9 Fury/Nano/X", CHIP_FIJI
-		{ 0x1002, 0x7300, HBM }, // "Radeon R9 Fury/Nano/X", CHIP_FIJI
-		{ 0x1002, 0x7300, HBM }, // "Radeon R9 Fury/Nano/X", CHIP_FIJI
-		{ 0x1002, 0x7300, HBM }, // "Radeon R9 Fury", CHIP_FIJI */
 	};
 	for (int i = 0; i < _countof(KnownGPUs); i++)
 	{
@@ -135,7 +130,7 @@ static MemoryType DetermineMemoryType(struct pci_dev *dev)
 #define AMD_TIMING_REGS_BASE_3 0x54200
 #define AMD_TIMING_REGS_BASE_4 0x56200
 
-// Split up AmdMemoryTweak to AmdMemoryTweakHBM & AmdMemoryTweakGDDR5 because the timings are different
+// Split up GDDR5, HBM & HBM2 because the structures and registers are different
 typedef struct {
 	u32 frequency;
 	// TIMING1
@@ -235,6 +230,26 @@ typedef struct {
 	u32 : 16;
 } HBM2_TIMINGS;
 
+/*
+typedef union {
+        u32 value;
+        struct {
+                u32 RCV_DLY : 3;
+                u32 RCV_EXT : 5;
+                u32 RST_SEL : 2;
+                u32 RXDPWRON_DLY : 2;
+                u32 RST_HLD : 4;
+                u32 STR_PRE : 1;
+		u32 STR_PST : 1;
+		u32 : 2;
+		u32 RBS_DLY : 5;
+		u32 RBS_WEDC_DLY : 5;
+		u32 : 2;
+        };
+} SEQ_RD_CTL_D0;
+#define MC_SEQ_RD_CTL_D0 0x28b4
+*/
+
 typedef union {
         u32 value;
         struct {
@@ -247,6 +262,19 @@ typedef union {
         };
 } SEQ_PMG_TIMING;
 #define MC_SEQ_PMG_TIMING 0x28B0
+
+typedef union {
+        u32 value;
+        struct {
+                u32 CKSRE : 3;
+                u32 CKSRX : 3;
+                u32 CKE_PULSE : 5;
+                u32 CKE : 8;
+                u32 SEQ_IDLE : 3;
+                u32 : 10;
+        };
+} SEQ_PMG_TIMING_HBM;
+#define MC_SEQ_PMG_TIMING_HBM 0x28C4
 
 typedef union {
 	u32 value;
@@ -263,12 +291,26 @@ typedef union {
 #define MC_SEQ_RAS_TIMING 0x28A0
 
 typedef union {
+        u32 value;
+        struct {
+                u32 RCDW : 5;   // # of cycles from active to write
+                u32 RCDWA : 5;  // # of cycles from active to write with auto-precharge
+                u32 RCDR : 5;   // # of cycles from active to read
+                u32 RCDRA : 5;  // # of cycles from active to read with auto-precharge
+                u32 RRD : 4;    // # of cycles from active bank a to active bank b
+                u32 RC : 7;     // # of cycles from active to active/auto refresh
+                u32 : 1;
+        };
+} SEQ_RAS_TIMING_HBM;
+#define MC_SEQ_RAS_TIMING_HBM 0x28a4
+
+typedef union {
 	u32 value;
 	struct {
 		u32 NOPW : 2;	// Extra cycle(s) between successive write bursts
 		u32 NOPR : 2;	// Extra cycle(s) between successive read bursts
 		u32 R2W : 5;	// Read to write turn
-		u32 CCLD : 3;	// Cycles between r/w from bank A to r/w bank B
+		u32 CCDL : 3;	// Cycles between r/w from bank A to r/w bank B
 		u32 R2R : 4;	// Read to read time
 		u32 W2R : 5;	// Write to read turn
 		u32 : 3;
@@ -277,6 +319,21 @@ typedef union {
 	};
 } SEQ_CAS_TIMING;
 #define MC_SEQ_CAS_TIMING 0x28A4
+
+typedef union {
+        u32 value;
+        struct {
+                u32 NOPW : 2;   // Extra cycle(s) between successive write bursts
+                u32 NOPR : 2;   // Extra cycle(s) between successive read bursts
+                u32 R2W : 5;    // Read to write turn
+                u32 CCDL : 3;   // Cycles between r/w from bank A to r/w bank B
+                u32 R2R : 4;    // Read to read time
+                u32 W2R : 5;    // Write to read turn
+                u32 CL : 5;     // CAS to data return latency
+                u32 : 6;
+        };
+} SEQ_CAS_TIMING_HBM;
+#define MC_SEQ_CAS_TIMING_HBM 0x28ac // 0x28ac lp = 0x28b0
 
 typedef union {
 	u32 value;
@@ -298,6 +355,19 @@ typedef union {
 #define MC_SEQ_MISC_TIMING 0x28A8
 
 typedef union {
+        u32 value;
+        struct {
+                u32 RP_WRA : 6; // From write with auto-precharge to active
+                u32 RP_RDA : 6; // From read with auto-precharge to active
+                u32 TRP : 5;    // Precharge command period
+                u32 RFC : 7;    // Auto-refresh command period
+                u32 RRDL : 4;
+		u32 MRD : 4;
+        };
+} SEQ_MISC_TIMING_HBM;
+#define MC_SEQ_MISC_TIMING_HBM 0x28B4
+
+typedef union {
 	u32 value;
 	struct {
 		u32 PA2RDATA : 3;
@@ -313,6 +383,21 @@ typedef union {
 	};
 } SEQ_MISC_TIMING2;
 #define MC_SEQ_MISC_TIMING2 0x28AC
+
+typedef union {
+        u32 value;
+        struct {
+                u32 PA2RDATA : 3;
+                u32 PA2WDATA : 3;
+                u32 FAW : 5;            // The time window in wich four activates are allowed in the same rank
+                u32 WPAR : 3;
+                u32 RPAR : 3;
+                u32 T32AW : 4;
+                u32 WDATATR : 4;
+		u32 : 7;
+        };
+} SEQ_MISC_TIMING2_HBM;
+#define MC_SEQ_MISC_TIMING2_HBM 0x28BC
 
 typedef union {
         u32 value;
@@ -345,6 +430,46 @@ typedef union {
 	};
 } ARB_DRAM_TIMING2;
 #define MC_ARB_DRAM_TIMING2 0x2778
+
+typedef union {
+        u32 value;
+        struct {
+                u32 REF : 16;
+		u32 : 16;
+        };
+} ARB_RFSH_RATE;
+#define MC_ARB_RFSH_RATE 0x27b0
+
+typedef union {
+        u32 value;
+        struct {
+                u32 ENB : 1;
+                u32 CNT : 5;
+		u32 TRC : 16;
+		u32 : 10;
+        };
+} SEQ_ROW_HAMMER;
+#define MC_SEQ_ROW_HAMMER 0x27b0
+
+typedef union {
+        u32 value;
+        struct {
+		u32 : 24;
+                u32 MAN : 8;
+        };
+} MANUFACTURER_HBM;
+#define MANUFACTURER_ID_HBM 0x29c4
+
+typedef union {
+        u32 value;
+        struct {
+                u32 : 8;
+                u32 MAN : 4;
+		u32 VEN : 4;
+		u32 : 16;
+        };
+} MANUFACTURER;
+#define MANUFACTURER_ID 0x2A00
 
 static u64 ParseIndicesArg(const char *arg)
 {
@@ -437,6 +562,7 @@ typedef struct {
 	// HBM2
 	HBM2_TIMINGS hbm2;
 	// GDDR5
+	//SEQ_RD_CTL_D0 d0;
 	SEQ_PMG_TIMING pmg;
 	SEQ_RAS_TIMING ras;
 	SEQ_CAS_TIMING cas;
@@ -445,6 +571,16 @@ typedef struct {
 	SEQ_MISC3 misc3;
 	ARB_DRAM_TIMING dram1;
 	ARB_DRAM_TIMING2 dram2;
+	ARB_RFSH_RATE ref;
+	MANUFACTURER man;
+	// HBM1
+	SEQ_PMG_TIMING_HBM pmg_hbm;
+	SEQ_RAS_TIMING_HBM ras_hbm;
+	SEQ_CAS_TIMING_HBM cas_hbm;
+	SEQ_MISC_TIMING_HBM misc_hbm;
+	SEQ_MISC_TIMING2_HBM misc2_hbm;
+	SEQ_ROW_HAMMER ham;
+	MANUFACTURER_HBM man_hbm;
 } GPU;
 
 static int gpu_compare(const void *A, const void *B)
@@ -541,9 +677,73 @@ static void PrintCurrentValues(GPU *gpu)
 		std::cout << "RFC Timing:\t";
 		std::cout << "  RFC: " << current.RFC << "\n";
 		std::cout << "\n";
+	} else if (DetermineMemoryType(gpu->dev) == HBM) {
+		MANUFACTURER_HBM man = gpu->man_hbm;
+                std::cout <<
+                        ((man.MAN == 0x63) ? "   Hynix HBM" :
+                        (man.MAN == 0x61) ? "   Samsung HBM" : "   Unknown") << std::endl;
+		printf("PMG:\t");
+                printf("  CKSRE: %d\t", gpu->pmg_hbm.CKSRE);
+                printf("  CKSRX: %d\t", gpu->pmg_hbm.CKSRX);
+                printf("  CKE_PULSE: %d\t", gpu->pmg_hbm.CKE_PULSE);
+                printf("  CKE: %d\t", gpu->pmg_hbm.CKE);
+                printf("  SEQ_IDLE: %d\n", gpu->pmg_hbm.SEQ_IDLE);
+                printf("CAS:\t");
+                printf("  CL: %d\t", gpu->cas_hbm.CL);
+                printf("  W2R: %d\t", gpu->cas_hbm.W2R);
+                printf("  R2R: %d\t", gpu->cas_hbm.R2R);
+                printf("  CCDL: %d\t", gpu->cas_hbm.CCDL);
+                printf("  R2W: %d\t", gpu->cas_hbm.R2W);
+                printf("  NOPR: %d\t", gpu->cas_hbm.NOPR);
+                printf("  NOPW: %d\n", gpu->cas_hbm.NOPW);
+                printf("RAS:\t");
+                printf("  RC: %d\t", gpu->ras.RC);
+                printf("  RRD: %d\t", gpu->ras.RRD);
+                printf("  RCDRA: %d\t", gpu->ras.RCDRA);
+                printf("  RCDR: %d\t", gpu->ras.RCDR);
+                printf("  RCDWA: %d\t", gpu->ras.RCDWA);
+                printf("  RCDW: %d\n", gpu->ras.RCDW);
+		printf("MISC:\t");
+		printf("  MRD: %d\t", gpu->misc_hbm.MRD);
+                printf("  RRDL: %d\t", gpu->misc_hbm.RRDL);
+                printf("  RFC: %d\t", gpu->misc_hbm.RFC);
+                printf("  TRP: %d\t", gpu->misc_hbm.TRP);
+                printf("  RP_RDA: %d\t", gpu->misc_hbm.RP_RDA);
+                printf("  RP_WRA: %d\n", gpu->misc_hbm.RP_WRA);
+                printf("MISC2:\t");
+                printf("  WDATATR: %d\t", gpu->misc2_hbm.WDATATR);
+                printf("  T32AW: %d\t", gpu->misc2_hbm.T32AW);
+                printf("  RPAR: %d\t", gpu->misc2_hbm.RPAR);
+                printf("  WPAR: %d\t", gpu->misc2_hbm.WPAR);
+                printf("  FAW: %d\t", gpu->misc2_hbm.FAW);
+                printf("  PA2WDATA: %d\t", gpu->misc2_hbm.PA2WDATA);
+                printf("  PA2RDATA: %d\n", gpu->misc2_hbm.PA2RDATA);
+		printf("Refresh:\t");
+                printf("  tREF: %d\n", gpu->ref.REF);
+		printf("Hammer:\t");
+                printf("  ENB: %d\t", gpu->ham.ENB);
+		printf("  CNT: %d\t", gpu->ham.CNT);
+		printf("  TRC: %d\n", gpu->ham.TRC);
 	}
 	else // GDDR5
 	{
+		MANUFACTURER man = gpu->man;
+                std::cout <<
+                        ((man.MAN == 0x1) ? "   Samsung GDDR5" :
+                        (man.MAN == 0x3) ? "   Elpida GDDR5" :
+			(man.MAN == 0x6) ? "   Hynix GDDR5" :
+                        (man.MAN == 0xf) ? "   Micron GDDR5" : "   Unknown") << std::endl;
+		/*printf("D0:\t");
+                printf("  RCV_DLY: %d\t", gpu->d0.RCV_DLY);
+                printf("  RCV_EXT: %d\t", gpu->d0.RCV_EXT);
+                printf("  RST_SEL: %d\t", gpu->d0.RST_SEL);
+                printf("  RXDPWRON_DLY: %d\t", gpu->d0.RXDPWRON_DLY);
+                printf("  RST_HLD: %d\t", gpu->d0.RST_HLD);
+                printf("  STR_PRE: %d\t", gpu->d0.STR_PRE);
+                printf("  STR_PST: %d\t", gpu->d0.STR_PST);
+                printf("  RBS_DLY: %d\t", gpu->d0.RBS_DLY);
+                printf("  RBS_WEDC_DLY: %d\n", gpu->d0.RBS_WEDC_DLY);
+		*/
 		printf("PMG:\t");
                 printf("  CKSRE: %d\t", gpu->pmg.CKSRE);
                 printf("  CKSRX: %d\t", gpu->pmg.CKSRX);
@@ -554,7 +754,7 @@ static void PrintCurrentValues(GPU *gpu)
 		printf("  CL: %d\t", gpu->cas.CL);
 		printf("  W2R: %d\t", gpu->cas.W2R);
 		printf("  R2R: %d\t", gpu->cas.R2R);
-		printf("  CCLD: %d\t", gpu->cas.CCLD);
+		printf("  CCDL: %d\t", gpu->cas.CCDL);
 		printf("  R2W: %d\t", gpu->cas.R2W);
 		printf("  NOPR: %d\t", gpu->cas.NOPR);
 		printf("  NOPW: %d\n", gpu->cas.NOPW);
@@ -600,6 +800,8 @@ static void PrintCurrentValues(GPU *gpu)
 		printf("  RP: %d\t", gpu->dram2.RP);
 		printf("  WRPLUSRP: %d\t", gpu->dram2.WRPLUSRP);
 		printf("  BUS_TURN: %d\n", gpu->dram2.BUS_TURN);
+		printf("Refresh:\t");
+		printf("  tREF: %d\n", gpu->ref.REF);
 	}
 }
 
@@ -614,6 +816,7 @@ int main(int argc, const char *argv[])
 			" By Eliovp & A.Solodovnikov\n\n"
 			" Global command line options:\n"
 			" --help \tShow this output\n"
+			" --version|--v\tShow version info\n"
 			" --gpu|--i [comma-separated gpu indices]\tSelected device(s)\n"
 			" --current \tList current timing values\n\n"
 			" Command line options: (HBM2)\n"
@@ -661,29 +864,65 @@ int main(int argc, const char *argv[])
                         " --WRDATA|--wrdata [value]\n"
                         " --CKESTAG|--ckestag [value]\n"
 			" --RFC|--rfc [value]\n\n"
-			" Command line options: (GDDR5)\n"
+			" Command line options: (HBM)\n"
 			" --CKSRE|--cksre [value]\n"
-                        " --CKSRX|--cksrx [value]\n"
-                        " --CKE_PULSE|--cke_pulse [value]\n"
-                        " --CKE|--cke [value]\n"
-                        " --SEQ_IDLE|--seq_idle [value]\n"
+			" --CKSRX|--cksrx [value]\n"
+			" --CKE_PULSE|--cke_pulse [value]\n"
+			" --CKE|--cke [value]\n"
+			" --SEQ_IDLE|--seq_idle [value]\n"
 			" --CL|--cl [value]\n"
 			" --W2R|--w2r [value]\n"
-                        " --R2R|--r2r [value]\n"
-                        " --CCLD|--ccld [value]\n"
-                        " --R2W|--r2w [value]\n"
+			" --R2R|--r2r [value]\n"
+			" --CCDL|--ccdl [value]\n"
+			" --R2W|--r2w [value]\n"
 			" --NOPR|--nopr [value]\n"
-                        " --NOPW|--nopw [value]\n"
-                        " --RCDW|--rcdw [value]\n"
-                        " --RCDWA|--rcdwa [value]\n"
-                        " --RCDR|--rcdr [value]\n"
-                        " --RCDRA|--rcdra [value]\n"
-                        " --RRD|--rrd [value]\n"
-                        " --RC|--rc [value]\n"
-                        " --RFC|--rfc [value]\n"
-                        " --TRP|--trp [value]\n"
+			" --NOPW|--nopw [value]\n"
+			" --RCDW|--rcdw [value]\n"
+			" --RCDWA|--rcdwa [value]\n"
+			" --RCDR|--rcdr [value]\n"
+			" --RCDRA|--rcdra [value]\n"
+			" --RRD|--rrd [value]\n"
+			" --RC|--rc [value]\n"
+			" --MRD|--mrd [value]\n"
+			" --RRDL|--rrdl [value]\n"
+			" --RFC|--rfc [value]\n"
+			" --TRP|--trp [value]\n"
 			" --RP_WRA|--rp_wra [value]\n"
-                        " --RP_RDA|--rp_rda [value]\n"
+			" --RP_RDA|--rp_rda [value]\n"
+			" --WDATATR|--wdatatr [value]\n"
+			" --T32AW|--t32aw [value]\n"
+			" --CRCWL|--crcwl [value]\n"
+			" --CRCRL|--crcrl [value]\n"
+			" --FAW|--faw [value]\n"
+			" --PA2WDATA|--pa2wdata [value]\n"
+			" --PA2RDATA|--pa2rdata [value]\n"
+			" --REF|--ref [value]\n"
+                        " --ENB|--enb [value]\n"
+                        " --CNT|--cnt [value]\n"
+                        " --TRC|--trc [value]\n\n"
+			" Command line options: (GDDR5)\n"
+			" --CKSRE|--cksre [value]\n"
+			" --CKSRX|--cksrx [value]\n"
+			" --CKE_PULSE|--cke_pulse [value]\n"
+			" --CKE|--cke [value]\n"
+			" --SEQ_IDLE|--seq_idle [value]\n"
+			" --CL|--cl [value]\n"
+			" --W2R|--w2r [value]\n"
+			" --R2R|--r2r [value]\n"
+			" --CCDL|--ccdl [value]\n"
+			" --R2W|--r2w [value]\n"
+			" --NOPR|--nopr [value]\n"
+			" --NOPW|--nopw [value]\n"
+			" --RCDW|--rcdw [value]\n"
+			" --RCDWA|--rcdwa [value]\n"
+			" --RCDR|--rcdr [value]\n"
+			" --RCDRA|--rcdra [value]\n"
+			" --RRD|--rrd [value]\n"
+			" --RC|--rc [value]\n"
+			" --RFC|--rfc [value]\n"
+			" --TRP|--trp [value]\n"
+			" --RP_WRA|--rp_wra [value]\n"
+			" --RP_RDA|--rp_rda [value]\n"
 			" --WDATATR|--wdatatr [value]\n"
 			" --T32AW|--t32aw [value]\n"
 			" --CRCWL|--crcwl [value]\n"
@@ -692,22 +931,30 @@ int main(int argc, const char *argv[])
 			" --PA2WDATA|--pa2wdata [value]\n"
 			" --PA2RDATA|--pa2rdata [value]\n"
 			" --RAS|--ras [value]\n"
-                        " --ACTRD|--actrd [value]\n"
-                        " --ACTWR|--actwr [value]\n"
-                        " --RASMACTRD|--rasmactrd [value]\n"
-                        " --RASMACWTR|--rasmacwtr [value]\n"
-                        " --RAS2RAS|--ras2ras [value]\n"
-                        " --RP|--rp [value]\n"
-                        " --WRPLUSRP|--wrplusrp [value]\n"
-                        " --BUS_TURN|--bus_turn [value]\n\n"
-			" HBM2 Example usage: ./amdmemtool -i 0,3,5 --faw 12 --RFC 208\n"
-			" GDDR5 Example usage: ./amdmemtool -i 1,2,4 --RFC 43 --ras2ras 176\n\n"
+			" --ACTRD|--actrd [value]\n"
+			" --ACTWR|--actwr [value]\n"
+			" --RASMACTRD|--rasmactrd [value]\n"
+			" --RASMACWTR|--rasmacwtr [value]\n"
+			" --RAS2RAS|--ras2ras [value]\n"
+			" --RP|--rp [value]\n"
+			" --WRPLUSRP|--wrplusrp [value]\n"
+			" --BUS_TURN|--bus_turn [value]\n"
+			" --REF|--ref [value]\n\n"
+			" HBM2 Example usage: ./amdmemtool --i 0,3,5 --faw 12 --RFC 208\n"
+			" HBM Example usage: ./amdmemtool --i 6 --ref 13\n"
+			" GDDR5 Example usage: ./amdmemtool --i 1,2,4 --RFC 43 --ras2ras 176\n\n"
 			" Make sure to run the program first with parameter --current to see what the current values are.\n"
 			" Current values may change based on state of the GPU,\n"
 			" in other words, make sure the GPU is under load when running --current\n"
 			" HBM2 Based GPU's do not need to be under load to apply timing changes.\n"
 			" Hint: Certain timings such as CL (Cas Latency) are stability timings, lowering these will lower stability.\n";
 		return 0;
+	}
+
+	if (!strcasecmp("--version", argv[1]) || !strcasecmp("--v", argv[1]))
+	{
+		printf(VERSION);
+		return EXIT_SUCCESS;
 	}
 
 	struct pci_access *pci = pci_alloc();
@@ -763,6 +1010,8 @@ int main(int argc, const char *argv[])
 			read(gpu->mmio, &gpu->hbm2, sizeof(gpu->hbm2));
 			break;
 		case GDDR5:
+			/*lseek(gpu->mmio, MC_SEQ_RD_CTL_D0, SEEK_SET);
+                        read(gpu->mmio, &gpu->d0, sizeof(gpu->d0));*/
 			lseek(gpu->mmio, MC_SEQ_PMG_TIMING, SEEK_SET);
                         read(gpu->mmio, &gpu->pmg, sizeof(gpu->pmg));
 			lseek(gpu->mmio, MC_SEQ_RAS_TIMING, SEEK_SET);
@@ -779,22 +1028,33 @@ int main(int argc, const char *argv[])
 			read(gpu->mmio, &gpu->dram1, sizeof(gpu->dram1));
 			lseek(gpu->mmio, MC_ARB_DRAM_TIMING2, SEEK_SET);
 			read(gpu->mmio, &gpu->dram2, sizeof(gpu->dram2));
+			lseek(gpu->mmio, MC_ARB_RFSH_RATE, SEEK_SET);
+                        read(gpu->mmio, &gpu->ref, sizeof(gpu->ref));
+			lseek(gpu->mmio, MANUFACTURER_ID, SEEK_SET);
+                        read(gpu->mmio, &gpu->man, sizeof(gpu->man));
 			break;
-		/* case HBM:
-			// maybe supported?
-			lseek(gpu->mmio, 0x28, SEEK_SET);
-			read(gpu->mmio, &gpu->ras, sizeof(gpu->ras));
-			lseek(gpu->mmio, 0x28, SEEK_SET);
-			read(gpu->mmio, &gpu->cas, sizeof(gpu->cas));
-			lseek(gpu->mmio, 0x28, SEEK_SET);
-			read(gpu->mmio, &gpu->misc, sizeof(gpu->misc));
-			lseek(gpu->mmio, 0x28, SEEK_SET);
-			read(gpu->mmio, &gpu->misc2, sizeof(gpu->misc2));
-			lseek(gpu->mmio, MC_ARB_DRAM_TIMING, SEEK_SET);
+		case HBM:
+			lseek(gpu->mmio, MC_SEQ_PMG_TIMING_HBM, SEEK_SET);
+                        read(gpu->mmio, &gpu->pmg_hbm, sizeof(gpu->pmg_hbm));
+			lseek(gpu->mmio, MC_SEQ_RAS_TIMING_HBM, SEEK_SET);
+			read(gpu->mmio, &gpu->ras, sizeof(gpu->ras_hbm));
+			lseek(gpu->mmio, MC_SEQ_CAS_TIMING_HBM, SEEK_SET);
+			read(gpu->mmio, &gpu->cas_hbm, sizeof(gpu->cas_hbm));
+			lseek(gpu->mmio, MC_SEQ_MISC_TIMING_HBM, SEEK_SET);
+			read(gpu->mmio, &gpu->misc_hbm, sizeof(gpu->misc_hbm));
+			lseek(gpu->mmio, MC_SEQ_MISC_TIMING2_HBM, SEEK_SET);
+			read(gpu->mmio, &gpu->misc2_hbm, sizeof(gpu->misc2_hbm));
+			lseek(gpu->mmio, MC_ARB_RFSH_RATE, SEEK_SET);
+                        read(gpu->mmio, &gpu->ref, sizeof(gpu->ref));
+			lseek(gpu->mmio, MC_SEQ_ROW_HAMMER, SEEK_SET);
+                        read(gpu->mmio, &gpu->ham, sizeof(gpu->ham));
+			lseek(gpu->mmio, MANUFACTURER_ID_HBM, SEEK_SET);
+                        read(gpu->mmio, &gpu->man_hbm, sizeof(gpu->man_hbm));
+			/*lseek(gpu->mmio, MC_ARB_DRAM_TIMING, SEEK_SET);
 			read(gpu->mmio, &gpu->dram1, sizeof(gpu->dram1));
 			lseek(gpu->mmio, MC_ARB_DRAM_TIMING2, SEEK_SET);
-			read(gpu->mmio, &gpu->dram2, sizeof(gpu->dram2));
-			break; */
+			read(gpu->mmio, &gpu->dram2, sizeof(gpu->dram2));*/
+			break;
 		}
 	}
 
@@ -1188,7 +1448,254 @@ int main(int argc, const char *argv[])
 							strcat(gpu->log, "RFC");
 						}
 					}
-					else // GDDR5 & HBM
+					else if (DetermineMemoryType(gpu->dev) == HBM) {
+						if (ParseNumericArg(argc, argv, i, "--CKSRE", value))
+                                                {
+                                                        gpu->pmg_hbm.CKSRE = value;
+                                                        gpu->modify[0] = true;
+                                                        if (gpu->log[0]) strcat(gpu->log, ", ");
+                                                        strcat(gpu->log, "CKSRE");
+                                                }
+                                                else if (ParseNumericArg(argc, argv, i, "--CKSRX", value))
+                                                {
+                                                        gpu->pmg_hbm.CKSRX = value;
+                                                        gpu->modify[0] = true;
+                                                        if (gpu->log[0]) strcat(gpu->log, ", ");
+                                                        strcat(gpu->log, "CKSRX");
+                                                }
+                                                else if (ParseNumericArg(argc, argv, i, "--CKE_PULSE", value))
+                                                {
+                                                        gpu->pmg_hbm.CKE_PULSE = value;
+                                                        gpu->modify[0] = true;
+                                                        if (gpu->log[0]) strcat(gpu->log, ", ");
+                                                        strcat(gpu->log, "CKE_PULSE");
+                                                }
+                                                else if (ParseNumericArg(argc, argv, i, "--CKE", value))
+                                                {
+                                                        gpu->pmg_hbm.CKE = value;
+                                                        gpu->modify[0] = true;
+                                                        if (gpu->log[0]) strcat(gpu->log, ", ");
+                                                        strcat(gpu->log, "CKE");
+                                                }
+                                                else if (ParseNumericArg(argc, argv, i, "--SEQ_IDLE", value))
+                                                {
+                                                        gpu->pmg_hbm.SEQ_IDLE = value;
+                                                        gpu->modify[0] = true;
+                                                        if (gpu->log[0]) strcat(gpu->log, ", ");
+                                                        strcat(gpu->log, "SEQ_IDLE");
+                                                }
+                                                else if (ParseNumericArg(argc, argv, i, "--RCDW", value))
+                                                {
+                                                        gpu->ras.RCDW = value;
+                                                        gpu->modify[1] = true;
+                                                        if (gpu->log[0]) strcat(gpu->log, ", ");
+                                                        strcat(gpu->log, "RCDW");
+                                                }
+                                                else if (ParseNumericArg(argc, argv, i, "--RCDWA", value))
+                                                {
+                                                        gpu->ras.RCDWA = value;
+                                                        gpu->modify[1] = true;
+                                                        if (gpu->log[0]) strcat(gpu->log, ", ");
+                                                        strcat(gpu->log, "RCDWA");
+                                                }
+                                                else if (ParseNumericArg(argc, argv, i, "--RCDR", value))
+                                                {
+                                                        gpu->ras.RCDR = value;
+                                                        gpu->modify[1] = true;
+                                                        if (gpu->log[0]) strcat(gpu->log, ", ");
+                                                        strcat(gpu->log, "RCDR");
+                                                }
+                                                else if (ParseNumericArg(argc, argv, i, "--RCDRA", value))
+                                                {
+                                                        gpu->ras.RCDRA = value;
+                                                        gpu->modify[1] = true;
+                                                        if (gpu->log[0]) strcat(gpu->log, ", ");
+                                                        strcat(gpu->log, "RCDRA");
+                                                }
+                                                else if (ParseNumericArg(argc, argv, i, "--RRD", value))
+                                                {
+                                                        gpu->ras.RRD = value;
+                                                        gpu->modify[1] = true;
+                                                        if (gpu->log[0]) strcat(gpu->log, ", ");
+                                                        strcat(gpu->log, "RRD");
+                                                }
+                                                else if (ParseNumericArg(argc, argv, i, "--RC", value))
+                                                {
+                                                        gpu->ras.RC = value;
+                                                        gpu->modify[1] = true;
+                                                        if (gpu->log[0]) strcat(gpu->log, ", ");
+                                                        strcat(gpu->log, "RC");
+                                                }
+                                                else if (ParseNumericArg(argc, argv, i, "--CL", value))
+                                                {
+                                                        gpu->cas_hbm.CL = value;
+                                                        gpu->modify[2] = true;
+                                                        if (gpu->log[0]) strcat(gpu->log, ", ");
+                                                        strcat(gpu->log, "CL");
+                                                }
+                                                else if (ParseNumericArg(argc, argv, i, "--W2R", value))
+                                                {
+                                                        gpu->cas.W2R = value;
+                                                        gpu->modify[2] = true;
+                                                        if (gpu->log[0]) strcat(gpu->log, ", ");
+                                                        strcat(gpu->log, "W2R");
+                                                }
+                                                else if (ParseNumericArg(argc, argv, i, "--R2R", value))
+                                                {
+                                                        gpu->cas_hbm.R2R = value;
+                                                        gpu->modify[2] = true;
+                                                        if (gpu->log[0]) strcat(gpu->log, ", ");
+                                                        strcat(gpu->log, "R2R");
+                                                }
+                                                else if (ParseNumericArg(argc, argv, i, "--CCDL", value))
+                                                {
+                                                        gpu->cas_hbm.CCDL = value;
+                                                        gpu->modify[2] = true;
+                                                        if (gpu->log[0]) strcat(gpu->log, ", ");
+                                                        strcat(gpu->log, "CCDL");
+                                                }
+                                                else if (ParseNumericArg(argc, argv, i, "--R2W", value))
+                                                {
+                                                        gpu->cas_hbm.R2W = value;
+                                                        gpu->modify[2] = true;
+                                                        if (gpu->log[0]) strcat(gpu->log, ", ");
+                                                        strcat(gpu->log, "R2W");
+                                                }
+                                                else if (ParseNumericArg(argc, argv, i, "--NOPR", value))
+                                                {
+                                                        gpu->cas_hbm.NOPR = value;
+                                                        gpu->modify[2] = true;
+                                                        if (gpu->log[0]) strcat(gpu->log, ", ");
+                                                        strcat(gpu->log, "NOPR");
+                                                }
+                                                else if (ParseNumericArg(argc, argv, i, "--NOPW", value))
+                                                {
+                                                        gpu->cas_hbm.NOPW = value;
+                                                        gpu->modify[2] = true;
+                                                        if (gpu->log[0]) strcat(gpu->log, ", ");
+                                                        strcat(gpu->log, "NOPW");
+                                                }
+						else if (ParseNumericArg(argc, argv, i, "--MRD", value))
+                                                {
+                                                        gpu->misc_hbm.MRD = value;
+                                                        gpu->modify[3] = true;
+                                                        if (gpu->log[0]) strcat(gpu->log, ", ");
+                                                        strcat(gpu->log, "MRD");
+                                                }
+                                                else if (ParseNumericArg(argc, argv, i, "--RRDL", value))
+                                                {
+                                                        gpu->misc_hbm.RRDL = value;
+                                                        gpu->modify[3] = true;
+                                                        if (gpu->log[0]) strcat(gpu->log, ", ");
+                                                        strcat(gpu->log, "RRDL");
+                                                }
+                                                else if (ParseNumericArg(argc, argv, i, "--RFC", value))
+                                                {
+                                                        gpu->misc_hbm.RFC = value;
+                                                        gpu->modify[3] = true;
+                                                        if (gpu->log[0]) strcat(gpu->log, ", ");
+                                                        strcat(gpu->log, "RFC");
+                                                }
+                                                else if (ParseNumericArg(argc, argv, i, "--TRP", value))
+                                                {
+                                                        gpu->misc_hbm.TRP = value;
+                                                        gpu->modify[3] = true;
+                                                        if (gpu->log[0]) strcat(gpu->log, ", ");
+                                                        strcat(gpu->log, "TRP");
+                                                }
+                                                else if (ParseNumericArg(argc, argv, i, "--RP_RDA", value))
+                                                {
+                                                        gpu->misc_hbm.RP_RDA = value;
+                                                        gpu->modify[3] = true;
+                                                        if (gpu->log[0]) strcat(gpu->log, ", ");
+                                                        strcat(gpu->log, "RP_RDA");
+                                                }
+                                                else if (ParseNumericArg(argc, argv, i, "--RP_WRA", value))
+                                                {
+                                                        gpu->misc_hbm.RP_WRA = value;
+                                                        gpu->modify[3] = true;
+                                                        if (gpu->log[0]) strcat(gpu->log, ", ");
+                                                        strcat(gpu->log, "RP_WRA");
+                                                }
+                                                else if (ParseNumericArg(argc, argv, i, "--WDATATR", value))
+                                                {
+                                                        gpu->misc2_hbm.WDATATR = value;
+                                                        gpu->modify[4] = true;
+                                                        if (gpu->log[0]) strcat(gpu->log, ", ");
+                                                        strcat(gpu->log, "WDATATR");
+                                                }
+                                                else if (ParseNumericArg(argc, argv, i, "--T32AW", value))
+                                                {
+                                                        gpu->misc2_hbm.T32AW = value;
+                                                        gpu->modify[4] = true;
+                                                        if (gpu->log[0]) strcat(gpu->log, ", ");
+                                                        strcat(gpu->log, "T32AW");
+                                                }
+                                                else if (ParseNumericArg(argc, argv, i, "--RPAR", value))
+                                                {
+                                                        gpu->misc2_hbm.RPAR = value;
+                                                        gpu->modify[4] = true;
+                                                        if (gpu->log[0]) strcat(gpu->log, ", ");
+                                                        strcat(gpu->log, "RPAR");
+                                                }
+                                                else if (ParseNumericArg(argc, argv, i, "--WPAR", value))
+                                                {
+                                                        gpu->misc2_hbm.WPAR = value;
+                                                        gpu->modify[4] = true;
+                                                        if (gpu->log[0]) strcat(gpu->log, ", ");
+                                                        strcat(gpu->log, "WPAR");
+                                                }
+                                                else if (ParseNumericArg(argc, argv, i, "--FAW", value))
+                                                {
+                                                        gpu->misc2_hbm.FAW = value;
+                                                        gpu->modify[4] = true;
+                                                        if (gpu->log[0]) strcat(gpu->log, ", ");
+                                                        strcat(gpu->log, "FAW");
+                                                }
+                                                else if (ParseNumericArg(argc, argv, i, "--PA2WDATA", value))
+                                                {
+                                                        gpu->misc2_hbm.PA2WDATA = value;
+                                                        gpu->modify[4] = true;
+                                                        if (gpu->log[0]) strcat(gpu->log, ", ");
+                                                        strcat(gpu->log, "P2WDATA");
+                                                }
+                                                else if (ParseNumericArg(argc, argv, i, "--PA2RDATA", value))
+                                                {
+                                                        gpu->misc2_hbm.PA2RDATA = value;
+                                                        gpu->modify[4] = true;
+                                                        if (gpu->log[0]) strcat(gpu->log, ", ");
+                                                        strcat(gpu->log, "PA2RDATA");
+                                                }
+						else if (ParseNumericArg(argc, argv, i, "--REF", value))
+                                                {
+                                                        gpu->ref.REF = value;
+                                                        gpu->modify[5] = true;
+                                                        if (gpu->log[0]) strcat(gpu->log, ", ");
+                                                        strcat(gpu->log, "REF");
+                                                }
+						else if (ParseNumericArg(argc, argv, i, "--ENB", value))
+                                                {
+                                                        gpu->ham.ENB = value;
+                                                        gpu->modify[6] = true;
+                                                        if (gpu->log[0]) strcat(gpu->log, ", ");
+                                                        strcat(gpu->log, "ENB");
+                                                }
+						else if (ParseNumericArg(argc, argv, i, "--CNT", value))
+                                                {
+                                                        gpu->ham.CNT = value;
+                                                        gpu->modify[6] = true;
+                                                        if (gpu->log[0]) strcat(gpu->log, ", ");
+                                                        strcat(gpu->log, "CNT");
+                                                }
+						else if (ParseNumericArg(argc, argv, i, "--TRC", value))
+                                                {
+                                                        gpu->ham.TRC = value;
+                                                        gpu->modify[6] = true;
+                                                        if (gpu->log[0]) strcat(gpu->log, ", ");
+                                                        strcat(gpu->log, "TRC");
+                                                }
+					}
+					else // GDDR5
 					{
 						if (ParseNumericArg(argc, argv, i, "--CKSRE", value))
                                                 {
@@ -1288,12 +1795,12 @@ int main(int argc, const char *argv[])
 							if (gpu->log[0]) strcat(gpu->log, ", ");
 							strcat(gpu->log, "R2R");
 						}
-						else if (ParseNumericArg(argc, argv, i, "--CCLD", value))
+						else if (ParseNumericArg(argc, argv, i, "--CCDL", value))
 						{
-							gpu->cas.CCLD = value;
+							gpu->cas.CCDL = value;
 							gpu->modify[2] = true;
 							if (gpu->log[0]) strcat(gpu->log, ", ");
-							strcat(gpu->log, "CCLD");
+							strcat(gpu->log, "CCDL");
 						}
 						else if (ParseNumericArg(argc, argv, i, "--R2W", value))
 						{
@@ -1456,6 +1963,34 @@ int main(int argc, const char *argv[])
 							if (gpu->log[0]) strcat(gpu->log, ", ");
 							strcat(gpu->log, "BUS_TURN");
 						}
+						else if (ParseNumericArg(argc, argv, i, "--REF", value))
+                                                {
+                                                        gpu->ref.REF = value;
+                                                        gpu->modify[8] = true;
+                                                        if (gpu->log[0]) strcat(gpu->log, ", ");
+                                                        strcat(gpu->log, "REF");
+                                                }
+						/*else if (ParseNumericArg(argc, argv, i, "--RCV_DLY", value))
+                                                {
+                                                        gpu->d0.RCV_DLY = value;
+                                                        gpu->modify[9] = true;
+                                                        if (gpu->log[0]) strcat(gpu->log, ", ");
+                                                        strcat(gpu->log, "RCV_DLY");
+                                                }
+						else if (ParseNumericArg(argc, argv, i, "--RCV_EXT", value))
+                                                {
+                                                        gpu->d0.RCV_EXT = value;
+                                                        gpu->modify[9] = true;
+                                                        if (gpu->log[0]) strcat(gpu->log, ", ");
+                                                        strcat(gpu->log, "RCV_EXT");
+                                                }
+						else if (ParseNumericArg(argc, argv, i, "--RCT_SEL", value))
+                                                {
+                                                        gpu->d0.RST_SEL = value;
+                                                        gpu->modify[9] = true;
+                                                        if (gpu->log[0]) strcat(gpu->log, ", ");
+                                                        strcat(gpu->log, "RCT_SEL");
+                                                }*/
 					}
 				}
 			}
@@ -1528,11 +2063,49 @@ int main(int argc, const char *argv[])
 						lseek(gpu->mmio, MC_ARB_DRAM_TIMING2, SEEK_SET);
 						write(gpu->mmio, &gpu->dram2, sizeof(gpu->dram2));
 						break;
+					case 8:
+						lseek(gpu->mmio, MC_ARB_RFSH_RATE, SEEK_SET);
+                                                write(gpu->mmio, &gpu->ref, sizeof(gpu->ref));
+                                                break;
+					/*case 9:
+                                                lseek(gpu->mmio, MC_SEQ_RD_CTL_D0, SEEK_SET);
+                                                write(gpu->mmio, &gpu->d0, sizeof(gpu->d0));
+                                                break;*/
 					}
 					break;
 				case HBM:
-					perror("HBM memory type is not supported yet\n");
-					return 1;
+					switch (i)
+                                        {
+                                        case 0:
+                                                lseek(gpu->mmio, MC_SEQ_PMG_TIMING_HBM, SEEK_SET);
+                                                write(gpu->mmio, &gpu->pmg_hbm, sizeof(gpu->pmg_hbm));
+                                                break;
+                                        case 1:
+                                                lseek(gpu->mmio, MC_SEQ_RAS_TIMING_HBM, SEEK_SET);
+                                                write(gpu->mmio, &gpu->ras_hbm, sizeof(gpu->ras_hbm));
+                                                break;
+                                        case 2:
+                                                lseek(gpu->mmio, MC_SEQ_CAS_TIMING_HBM, SEEK_SET);
+                                                write(gpu->mmio, &gpu->cas_hbm, sizeof(gpu->cas_hbm));
+                                                break;
+                                        case 3:
+                                                lseek(gpu->mmio, MC_SEQ_MISC_TIMING_HBM, SEEK_SET);
+                                                write(gpu->mmio, &gpu->misc_hbm, sizeof(gpu->misc_hbm));
+                                                break;
+                                        case 4:
+                                                lseek(gpu->mmio, MC_SEQ_MISC_TIMING2_HBM, SEEK_SET);
+                                                write(gpu->mmio, &gpu->misc2_hbm, sizeof(gpu->misc2_hbm));
+                                                break;
+                                        case 5:
+                                                lseek(gpu->mmio, MC_ARB_RFSH_RATE, SEEK_SET);
+						write(gpu->mmio, &gpu->ref, sizeof(gpu->ref));
+                                                break;
+					case 6:
+                                                lseek(gpu->mmio, MC_SEQ_ROW_HAMMER, SEEK_SET);
+                                                write(gpu->mmio, &gpu->ham, sizeof(gpu->ham));
+                                                break;
+                                        }
+                                        break;
 				}
 			}
 		}
