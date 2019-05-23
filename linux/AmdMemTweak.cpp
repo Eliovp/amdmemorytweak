@@ -447,6 +447,7 @@ typedef union {
 		u32 TARF2T : 5;	// number of tck cycles from aurto-refresh command to a train command 
 		u32 TT2ROW : 5;	
 		u32 TLD2LD : 5;	// number of mclk cycles between LDFF commands
+		u32 : 12; // woops :p Thx Doktor83  ;-) (Community effort for the win!)
 	};
 } SEQ_TRAIN_TIMING;
 #define MC_SEQ_TRAIN_TIMING 0x2900
