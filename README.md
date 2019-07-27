@@ -5,6 +5,9 @@
 
 ![alt text](http://eliovp.com/latestGUIR7incl.png)
 
+# AMD Memory Tweak XL Released!
+[Link](https://github.com/Eliovp/AMDMemoryTweakXL)
+
 ### Support
 
   - GDDR5 Based AMD GPU's
