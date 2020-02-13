@@ -71,7 +71,7 @@ bool IsRelevantDeviceID(struct pci_dev* dev)
 		(dev->device_id == 0x687f) || // Vega 10 XL/XT [Radeon RX Vega 56/64]
 		(dev->device_id == 0x6867) || // Vega 10 XL [Radeon Pro Vega 56]
 		(dev->device_id == 0x6863) || // Vega 10 XTX [Radeon Vega Frontier Edition]
-        (dev->device_id == 0x6fdf) || // RX 580 FAT
+        (dev->device_id == 0x6fdf) || // Ellesmere [Radeon RX 470/480/570/570X/580/580X/590]
 		(dev->device_id == 0x67df) || // Ellesmere [Radeon RX 470/480/570/570X/580/580X/590]
 		(dev->device_id == 0x67c4) || // Ellesmere [Radeon Pro WX 7100]
 		(dev->device_id == 0x67c7) || // Ellesmere [Radeon Pro WX 5100]
