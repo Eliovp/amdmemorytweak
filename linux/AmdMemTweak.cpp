@@ -966,7 +966,7 @@ static void PrintCurrentValues(GPU * gpu)
 		printf("  OEN_SEL: %d\t", gpu->ctl2.hbm.OEN_SEL);
 		printf("  CMD_DLY: %d\t", gpu->ctl2.hbm.CMD_DLY);
 		printf("  ADR_DLY: %d\n", gpu->ctl2.hbm.ADR_DLY);
-		printf("Power Mangement related timings:\n");
+		printf("Power Management related timings:\n");
 		printf("  \t  CKSRE: %d\t", gpu->pmg.hbm.CKSRE);
 		printf("  CKSRX: %d\t", gpu->pmg.hbm.CKSRX);
 		printf("  CKE_PULSE: %d\t", gpu->pmg.hbm.CKE_PULSE);
