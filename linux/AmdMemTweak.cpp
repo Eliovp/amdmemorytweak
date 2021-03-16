@@ -1625,10 +1625,8 @@ int main(int argc, const char* argv[])
 		GPU* gpu = &gpus[index];
 		char buffer[1024];
 		char* name = pci_lookup_name(pci, buffer, sizeof(buffer), PCI_LOOKUP_DEVICE, gpu->dev->vendor_id, gpu->dev->device_id);
-		fprintf(stdout, "pci_lookup_name: %s\n", name);
 		if (gpu->dev && IsRelevantDeviceID(gpu->dev))
 		{
-			fprintf(stdout, "current 0: \n");
 			u64 affectedGPUs = 0xFFFFFFFFFFFFFFFF; // apply to all GPUs by default
 			for (int i = 1; i < argc; i++)
 			{
@@ -1644,7 +1642,6 @@ int main(int argc, const char* argv[])
 				}
 				else if (!strcasecmp("--current", argv[i]) || !strcasecmp("--c", argv[i]))
 				{
-					fprintf(stdout, "current 1: \n");
 					if (affectedGPUs & ((u64)1 << index))
 					{
 						std::cout << "GPU " << index << ": ";
@@ -1654,7 +1651,6 @@ int main(int argc, const char* argv[])
 				}
 				else if (affectedGPUs & ((u64)1 << index))
 				{
-					fprintf(stdout, "current 2: \n");
 					u32 value = 0;
 					if (DetermineMemoryType(gpu->dev) == HBM2)
 					{
@@ -2633,7 +2629,6 @@ int main(int argc, const char* argv[])
 					}
 					else // GDDR5
 					{
-						fprintf(stdout, "current 3: \n");
 						if (ParseNumericArg(argc, argv, i, "--DAT_DLY0", value))
 						{
 							gpu->ctl1.rx.DAT_DLY = value;
