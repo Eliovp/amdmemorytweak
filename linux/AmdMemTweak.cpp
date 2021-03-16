@@ -71,6 +71,7 @@ bool IsRelevantDeviceID(struct pci_dev* dev)
 		(dev->device_id == 0x6867) || // Vega 10 XL [Radeon Pro Vega 56]
 		(dev->device_id == 0x6863) || // Vega 10 XTX [Radeon Vega Frontier Edition]
 		(dev->device_id == 0x67df) || // Ellesmere [Radeon RX 470/480/570/570X/580/580X/590]
+		(dev->device_id == 0x6fdf) || // Ellesmere [Radeon RX 580SP]
 		(dev->device_id == 0x67c4) || // Ellesmere [Radeon Pro WX 7100]
 		(dev->device_id == 0x67c7) || // Ellesmere [Radeon Pro WX 5100]
 		(dev->device_id == 0x67ef) || // Baffin [Radeon RX 460/560D / Pro 450/455/460/555/555X/560/560X]
@@ -1481,6 +1482,7 @@ int main(int argc, const char* argv[])
 		if (IsAmdDisplayDevice(dev))
 		{
 			gpus[gpuCount++].dev = dev;
+			printf("IsAmdDisplayDevice!\n");
 		}
 	}
 
@@ -1506,6 +1508,7 @@ int main(int argc, const char* argv[])
 		if (instance == -1)
 		{
 			fprintf(stderr, "Cannot find DRI instance for pci:%s\n", buffer);
+			continue;
 			return 1;
 		}
 
@@ -1514,6 +1517,7 @@ int main(int argc, const char* argv[])
 		if (gpu->mmio == -1)
 		{
 			fprintf(stderr, "Failed to open %s\n", buffer);
+			// continue;
 			return 1;
 		}
 
@@ -1611,8 +1615,10 @@ int main(int argc, const char* argv[])
 		GPU* gpu = &gpus[index];
 		char buffer[1024];
 		char* name = pci_lookup_name(pci, buffer, sizeof(buffer), PCI_LOOKUP_DEVICE, gpu->dev->vendor_id, gpu->dev->device_id);
+		fprintf(stdout, "pci_lookup_name: %s\n", name);
 		if (gpu->dev && IsRelevantDeviceID(gpu->dev))
 		{
+			fprintf(stdout, "current 0: \n");
 			u64 affectedGPUs = 0xFFFFFFFFFFFFFFFF; // apply to all GPUs by default
 			for (int i = 1; i < argc; i++)
 			{
@@ -1628,6 +1634,7 @@ int main(int argc, const char* argv[])
 				}
 				else if (!strcasecmp("--current", argv[i]) || !strcasecmp("--c", argv[i]))
 				{
+					fprintf(stdout, "current 1: \n");
 					if (affectedGPUs & ((u64)1 << index))
 					{
 						std::cout << "GPU " << index << ": ";
@@ -1637,6 +1644,7 @@ int main(int argc, const char* argv[])
 				}
 				else if (affectedGPUs & ((u64)1 << index))
 				{
+					fprintf(stdout, "current 2: \n");
 					u32 value = 0;
 					if (DetermineMemoryType(gpu->dev) == HBM2)
 					{
@@ -2615,6 +2623,7 @@ int main(int argc, const char* argv[])
 					}
 					else // GDDR5
 					{
+						fprintf(stdout, "current 3: \n");
 						if (ParseNumericArg(argc, argv, i, "--DAT_DLY0", value))
 						{
 							gpu->ctl1.rx.DAT_DLY = value;
