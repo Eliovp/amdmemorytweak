@@ -31,7 +31,7 @@
 #include <unistd.h> // close lseek read write
 #include <fcntl.h> // open
 #include <dirent.h> // opendir readdir closedir
-
+#include <regex.h>
 extern "C" {
 #include "pci/pci.h" // full path /usr/local/include/pci/pci.h
 }
@@ -1476,15 +1476,25 @@ int main(int argc, const char* argv[])
 	pci_init(pci);
 	pci_scan_bus(pci);
 	int gpuCount = 0;
+	regex_t regex;
+	if (regcomp(&regex, "(Kaveri|Beavercreek|Sumo|Wrestler|Kabini|Mullins|Temash|Trinity|Richland|Stoney|Carrizo|Raven)", REG_ICASE | REG_EXTENDED) != 0){
+		fprintf(stderr, "regcomp: error");
+		return 1;
+	}
 	for (struct pci_dev* dev = pci->devices; dev; dev = dev->next)
 	{
 		pci_fill_info(dev, PCI_FILL_IDENT | PCI_FILL_BASES | PCI_FILL_ROM_BASE | PCI_FILL_SIZES | PCI_FILL_CLASS);
+		char buffer[1024];
+		char* name = pci_lookup_name(pci, buffer, sizeof(buffer), PCI_LOOKUP_DEVICE, dev->vendor_id, dev->device_id);
+        if (regexec(&regex, buffer, 0, NULL, 0) == 0) {
+            continue;
+        }
 		if (IsAmdDisplayDevice(dev))
 		{
 			gpus[gpuCount++].dev = dev;
-			printf("IsAmdDisplayDevice!\n");
 		}
 	}
+	regfree(&regex);
 
 	if (gpuCount == 0)
 	{
@@ -1593,8 +1603,8 @@ int main(int argc, const char* argv[])
 		for (int index = 0; index < gpuCount; index++)
 		{
 			GPU* gpu = &gpus[index];
-			char buffer[1024];
-			char* name = pci_lookup_name(pci, buffer, sizeof(buffer), PCI_LOOKUP_DEVICE, gpu->dev->vendor_id, gpu->dev->device_id);
+			// char buffer[1024];
+			// char* name = pci_lookup_name(pci, buffer, sizeof(buffer), PCI_LOOKUP_DEVICE, gpu->dev->vendor_id, gpu->dev->device_id);
 			if (gpu->dev && IsRelevantDeviceID(gpu->dev))
 			{
 				printf("Scanning GPU %d\n", index);
