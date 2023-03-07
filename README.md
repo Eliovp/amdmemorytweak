@@ -3,7 +3,7 @@
 #### Read and modify memory timings "on the fly"
 ---
 
-![alt text](http://eliovp.com/latestGUIR7incl.png)
+# Please be cautious, this --> https://github.com/ELI0VP <-- is obviously a fake account and is most probably spreading spyware/viruses, etc..
 
 # AMD Memory Tweak XL Released!
 [Link](https://github.com/Eliovp/AMDMemoryTweakXL)
