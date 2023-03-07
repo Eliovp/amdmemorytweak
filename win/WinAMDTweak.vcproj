@@ -6,7 +6,7 @@
 	ProjectGUID="{990138F7-20B4-4BBE-A573-137186E05BA1}"
 	RootNamespace="WinAMDTweak"
 	Keyword="Win32Proj"
-	TargetFrameworkVersion="131072"
+	TargetFrameworkVersion="231072"
 	>
 	<Platforms>
 		<Platform
