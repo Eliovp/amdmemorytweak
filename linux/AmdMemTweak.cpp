@@ -66,10 +66,12 @@ bool IsAmdDisplayDevice(struct pci_dev* dev)
 bool IsRelevantDeviceID(struct pci_dev* dev)
 {
 	return
+        (dev->device_id == 0x731F) || // Navi 14 [Radeon RX 5700 XT]
 		(dev->device_id == 0x66af) || // Radeon VII
 		(dev->device_id == 0x687f) || // Vega 10 XL/XT [Radeon RX Vega 56/64]
 		(dev->device_id == 0x6867) || // Vega 10 XL [Radeon Pro Vega 56]
 		(dev->device_id == 0x6863) || // Vega 10 XTX [Radeon Vega Frontier Edition]
+        (dev->device_id == 0x6fdf) || // Ellesmere [Radeon RX 470/480/570/570X/580/580X/590]
 		(dev->device_id == 0x67df) || // Ellesmere [Radeon RX 470/480/570/570X/580/580X/590]
 		(dev->device_id == 0x67c4) || // Ellesmere [Radeon Pro WX 7100]
 		(dev->device_id == 0x67c7) || // Ellesmere [Radeon Pro WX 5100]
@@ -91,7 +93,7 @@ static bool IsR9(struct pci_dev* dev)
 		(dev->device_id == 0x679a); // Tahiti PRO [Radeon HD 7950/8950 OEM / R9 280]
 }
 
-typedef enum { GDDR5, HBM, HBM2 } MemoryType;
+typedef enum { GDDR5, HBM, HBM2, GDDR6 } MemoryType;
 
 static MemoryType DetermineMemoryType(struct pci_dev* dev)
 {
@@ -100,6 +102,8 @@ static MemoryType DetermineMemoryType(struct pci_dev* dev)
 		u16 device_id;
 		MemoryType memory_type;
 	} KnownGPUs[] = {
+        /* Navi 14 */
+        { 0x1002, 0x731f, GDDR6}, // "Radeon Navi14", CHIP_NAVI14
 		/* Vega20 - Radeon VII */
 		{ 0x1002, 0x66a0, HBM2 }, // "Radeon Instinct", CHIP_VEGA20
 		{ 0x1002, 0x66a1, HBM2 }, // "Radeon Vega20", CHIP_VEGA20
