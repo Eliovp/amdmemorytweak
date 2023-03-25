@@ -1,6 +1,6 @@
 # AMD Memory Tweak
 ---
-#### Read and modify memory timings "on the fly"
+#### Read and modify memory timings "on the fly" for AMD GPUs
 ---
 
 # Please be cautious, this --> https://github.com/ELI0VP <-- is obviously a fake account and is most probably spreading spyware/viruses, etc..
@@ -49,7 +49,7 @@ $ g++ AmdMemTweak.cpp -lpci -lresolv -o amdmemtweak
 | - -help |  | Show this output |
 | - -version\|--v |  | Show version info |
 | - -gpu\|- -i | Comma-Seperated gpu indices | Selected device(s) |
-| - -current |  | List current twiming values |
+| - -current |  | List current timing values |
 
 ##### Command line options: (HBM2)
 ##
@@ -187,7 +187,7 @@ $ g++ AmdMemTweak.cpp -lpci -lresolv -o amdmemtweak
 ##### Example Usage (Linux):
 ##
 ```sh
-$ sudo ./amdmemtool --i 0,3,5 --faw 100 --RFC 100
+$ sudo ./amdmemtweak --i 0,3,5 --faw 100 --RFC 100
 ```
 
 ##### Example Usage (Windows):
@@ -216,7 +216,7 @@ Refresh Timings tRFC, tRFCSB, tRREFD, tREFI
 ## Some extra info
 Still not all possible timings have been exposed.
 However, it's not such a big deal to add more of them in the tool.
-The ones available are more or like the most important ones.
+The ones available are more or less the most important ones.
 
 Some users have reported very nice results already, please continue to contribute to these results.
 [Example](https://bitcointalk.org/index.php?topic=5123724)
